@@ -1,0 +1,518 @@
+// School Management System - Prisma Schema
+// Based on SRS v1.0 - Multi-school, role-based system
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Gender {
+  Male
+  Female
+}
+
+enum EmployeeRole {
+  Teacher
+  Staff
+  Executive
+}
+
+enum FeeStatus {
+  Pending
+  Paid
+  PartiallyPaid
+  Overdue
+  Cancelled
+}
+
+enum UserRole {
+  SuperAdmin
+  SchoolAdmin
+  Finance
+  ReadOnly
+}
+
+enum IncomeCategory {
+  Fee
+  ExtraCharge
+  Other
+}
+
+enum ExpenseCategory {
+  Salary
+  Utilities
+  Supplies
+  Maintenance
+  Other
+}
+
+// ============================================================================
+// AUTHENTICATION & USER MANAGEMENT (SRS 3.1)
+// ============================================================================
+
+/// Super Admin - System-wide administrator (SRS 2.3, 2.5)
+/// NOTE: This is the ONLY table without schoolId for data isolation
+model SuperAdmin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // SuperAdmin creates schools
+  schools School[]
+}
+
+/// School - Each school operates independently (SRS 2.1, 2.5)
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  address   String?
+  phone     String?
+  email     String?
+  logo      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Created by SuperAdmin
+  superAdminId String
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  // School has many...
+  users      User[]
+  classes    Class[]
+  guardians  Guardian[]
+  students   Student[]
+  teachers   Teacher[]
+  staff      Staff[]
+  executives Executive[]
+  incomes    Income[]
+  expenses   Expense[]
+  events     Event[]
+
+  @@index([superAdminId])
+}
+
+/// User - School-level users (SRS 3.1.3)
+model User {
+  id        String   @id @default(cuid())
+  username  String
+  password  String
+  role      UserRole @default(SchoolAdmin)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([username, schoolId])
+  @@index([schoolId])
+}
+
+// ============================================================================
+// ACADEMIC STRUCTURE
+// ============================================================================
+
+/// Class/Grade - Playgroup to Grade 9 (SRS 3.2.1)
+model Class {
+  id          String   @id @default(cuid())
+  name        String // e.g., "Playgroup", "Grade 1", etc.
+  gradeLevel  Int // Numeric level for sorting (0 = Playgroup, 1-9 for grades)
+  hexCode     String // Hexadecimal code for roll number generation
+  section     String?
+  annualFee   Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Class has many students
+  students          Student[]
+  teacherAssignments TeacherClassAssignment[]
+  attendances       Attendance[]
+
+  @@unique([name, section, schoolId])
+  @@index([schoolId])
+}
+
+// ============================================================================
+// STUDENT MANAGEMENT (SRS 3.2)
+// ============================================================================
+
+/// Guardian - Parent/Guardian of students (SRS 3.2.3, 3.2.4)
+model Guardian {
+  id          String   @id @default(cuid())
+  name        String
+  relation    String // Father, Mother, Uncle, etc.
+  cnic        String
+  dateOfBirth DateTime
+  contact     String
+  address     String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // One guardian can have multiple students (siblings) - SRS 3.2.4
+  students Student[]
+
+  @@unique([cnic, schoolId])
+  @@index([schoolId])
+  @@index([cnic])
+  @@index([name])
+}
+
+/// Student - Core student entity (SRS 3.2.1)
+model Student {
+  id                 String   @id @default(cuid())
+  name               String
+  rollNumber         String // Format: YY + Sequence + Grade(Hex) - SRS 3.2.2
+  dateOfBirth        DateTime
+  dateOfAdmission    DateTime
+  bFormNumber        String // B-Form (Pakistan child registration)
+  gender             Gender
+  photograph         String? // URL/path to photo
+  annualFee          Decimal  @db.Decimal(10, 2)
+  discountPercentage Decimal  @default(0) @db.Decimal(5, 2)
+  finalFee           Decimal  @db.Decimal(10, 2) // Auto-calculated
+  isActive           Boolean  @default(true) // Soft deletion - SRS 3.2.7
+  deletedAt          DateTime? // Soft delete timestamp
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Relations
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id])
+  guardianId String
+  guardian   Guardian @relation(fields: [guardianId], references: [id])
+
+  // Student has many...
+  feeChallans FeeChallan[]
+  attendances Attendance[]
+
+  @@unique([rollNumber, schoolId])
+  @@index([schoolId])
+  @@index([classId])
+  @@index([guardianId])
+  @@index([name])
+  @@index([dateOfAdmission])
+}
+
+/// Attendance - Student attendance tracking (SRS 5 - Future Enhancement)
+model Attendance {
+  id        String   @id @default(cuid())
+  date      DateTime
+  isPresent Boolean  @default(false)
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+
+  // Relations
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id])
+
+  @@unique([studentId, date])
+  @@index([schoolId])
+  @@index([studentId])
+  @@index([classId])
+  @@index([date])
+}
+
+// ============================================================================
+// HUMAN RESOURCE MANAGEMENT (SRS 3.3)
+// ============================================================================
+
+/// Teacher - Teaching staff (SRS 3.3.1)
+model Teacher {
+  id                String   @id @default(cuid())
+  name              String
+  fatherName        String
+  dateOfBirth       DateTime
+  cnic              String
+  contact           String
+  gender            Gender
+  salary            Decimal  @db.Decimal(10, 2)
+  subject           String
+  educationalDegree String
+  photograph        String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Teacher assignments to classes
+  classAssignments TeacherClassAssignment[]
+  salarySlips      SalarySlip[]
+
+  @@unique([cnic, schoolId])
+  @@index([schoolId])
+}
+
+/// TeacherClassAssignment - Many-to-many between Teacher and Class
+model TeacherClassAssignment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, classId])
+  @@index([teacherId])
+  @@index([classId])
+}
+
+/// Staff - Non-teaching staff (SRS 3.3.2)
+model Staff {
+  id           String   @id @default(cuid())
+  name         String
+  fatherName   String
+  dateOfBirth  DateTime
+  cnic         String
+  contact      String
+  gender       Gender
+  salary       Decimal  @db.Decimal(10, 2)
+  role         String // Specific role within staff category
+  workingHours String // e.g., "8 AM - 4 PM"
+  photograph   String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // School isolation
+  schoolId    String
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  salarySlips SalarySlip[]
+
+  @@unique([cnic, schoolId])
+  @@index([schoolId])
+}
+
+/// Executive - Management/Owners (SRS 3.3.3)
+model Executive {
+  id                  String   @id @default(cuid())
+  name                String
+  fatherName          String
+  motherName          String
+  dateOfBirth         DateTime
+  cnic                String
+  contact             String
+  gender              Gender
+  salary              Decimal  @db.Decimal(10, 2)
+  designation         String
+  ownershipPercentage Decimal  @db.Decimal(5, 2)
+  photograph          String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // School isolation
+  schoolId    String
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  salarySlips SalarySlip[]
+
+  @@unique([cnic, schoolId])
+  @@index([schoolId])
+}
+
+// ============================================================================
+// FINANCE MANAGEMENT (SRS 3.4)
+// ============================================================================
+
+/// FeeChallan - Fee payment slips (SRS 3.4.3)
+model FeeChallan {
+  id             String    @id @default(cuid())
+  challanNumber  String
+  month          String // e.g., "January 2026"
+  year           Int
+  dueDate        DateTime
+  amount         Decimal   @db.Decimal(10, 2)
+  discount       Decimal   @default(0) @db.Decimal(10, 2)
+  additionalCharges Decimal @default(0) @db.Decimal(10, 2) // SRS 3.4.4
+  totalAmount    Decimal   @db.Decimal(10, 2)
+  paidAmount     Decimal   @default(0) @db.Decimal(10, 2)
+  status         FeeStatus @default(Pending)
+  paidAt         DateTime?
+  remarks        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // School isolation
+  schoolId String
+
+  // Relations
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Fee breakdown items
+  feeBreakdown FeeBreakdownItem[]
+
+  // Link to income when paid
+  incomeId String?
+  income   Income? @relation(fields: [incomeId], references: [id])
+
+  @@unique([challanNumber, schoolId])
+  @@index([schoolId])
+  @@index([studentId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+/// FeeBreakdownItem - Individual items in fee challan
+model FeeBreakdownItem {
+  id          String  @id @default(cuid())
+  description String
+  amount      Decimal @db.Decimal(10, 2)
+
+  feeChallanId String
+  feeChallan   FeeChallan @relation(fields: [feeChallanId], references: [id], onDelete: Cascade)
+
+  @@index([feeChallanId])
+}
+
+/// Income - Income records (SRS 3.4.1)
+model Income {
+  id          String         @id @default(cuid())
+  description String
+  amount      Decimal        @db.Decimal(10, 2)
+  category    IncomeCategory
+  date        DateTime
+  reference   String? // Reference number
+  remarks     String?
+  isAutomatic Boolean        @default(false) // Auto-generated from fee payment
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Linked fee challans (when income is from fees)
+  feeChallans FeeChallan[]
+
+  @@index([schoolId])
+  @@index([category])
+  @@index([date])
+}
+
+/// Expense - Expense records (SRS 3.4.2)
+model Expense {
+  id          String          @id @default(cuid())
+  description String
+  amount      Decimal         @db.Decimal(10, 2)
+  category    ExpenseCategory
+  date        DateTime
+  reference   String?
+  remarks     String?
+  isAutomatic Boolean         @default(false) // Auto-generated from salary payment
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Linked salary slips (when expense is salary)
+  salarySlips SalarySlip[]
+
+  @@index([schoolId])
+  @@index([category])
+  @@index([date])
+}
+
+/// SalarySlip - Salary payment records (SRS 3.4.5)
+model SalarySlip {
+  id            String   @id @default(cuid())
+  slipNumber    String
+  month         String // e.g., "January 2026"
+  year          Int
+  baseSalary    Decimal  @db.Decimal(10, 2)
+  deductions    Decimal  @default(0) @db.Decimal(10, 2)
+  bonuses       Decimal  @default(0) @db.Decimal(10, 2)
+  netSalary     Decimal  @db.Decimal(10, 2)
+  paidAt        DateTime
+  remarks       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+
+  // Employee type (polymorphic relation)
+  employeeType EmployeeRole
+  teacherId    String?
+  teacher      Teacher?   @relation(fields: [teacherId], references: [id])
+  staffId      String?
+  staff        Staff?     @relation(fields: [staffId], references: [id])
+  executiveId  String?
+  executive    Executive? @relation(fields: [executiveId], references: [id])
+
+  // Linked expense
+  expenseId String?
+  expense   Expense? @relation(fields: [expenseId], references: [id])
+
+  @@unique([slipNumber, schoolId])
+  @@index([schoolId])
+  @@index([teacherId])
+  @@index([staffId])
+  @@index([executiveId])
+  @@index([expenseId])
+}
+
+// ============================================================================
+// CALENDAR & EVENTS (SRS 3.5)
+// ============================================================================
+
+/// Event - Calendar events
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  isAllDay    Boolean  @default(false)
+  color       String? // For visual display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([startDate])
+  @@index([endDate])
+}
