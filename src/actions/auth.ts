@@ -60,7 +60,35 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
     // If no schoolSlug, we can't easily find the user unless username is globally unique (but schema says username+school is unique).
     // So schoolSlug is required for school users.
 
-    if (schoolSlug) {
+    // 2. Check for User across schools if slug is missing
+    if (!schoolSlug) {
+        // Try to find if this username exists in ANY school
+        const users = await db.user.findMany({
+            where: { username },
+            include: { school: true },
+        });
+
+        if (users.length === 0) {
+            return { message: 'Invalid credentials' };
+        }
+
+        if (users.length > 1) {
+            return { message: 'Multiple users found. Please provide School Slug.' };
+        }
+
+        const user = users[0];
+        if (await verifyPassword(password, user.password)) {
+            session.userId = user.id;
+            session.username = user.username;
+            session.role = user.role;
+            session.schoolId = user.schoolId;
+            session.schoolSlug = user.school.slug;
+            session.isSuperAdmin = false;
+            await session.save();
+            redirect('/dashboard');
+        }
+    } else {
+        // Specific school login
         const school = await db.school.findUnique({
             where: { slug: schoolSlug },
         });

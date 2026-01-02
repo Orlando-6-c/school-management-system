@@ -23,7 +23,7 @@ export default function SchoolsPage() {
                         Manage your school tenants and their administrators.
                     </p>
                 </div>
-                <CreateSchoolDialog />
+                <CreateSchoolDialog onSuccess={() => getSchools().then(setSchools)} />
             </div>
 
             <div className="rounded-md border border-gray-200 bg-white shadow-sm">

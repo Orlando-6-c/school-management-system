@@ -29,7 +29,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function CreateSchoolDialog() {
+interface CreateSchoolDialogProps {
+    onSuccess?: () => void;
+}
+
+export function CreateSchoolDialog({ onSuccess }: CreateSchoolDialogProps) {
     const [open, setOpen] = useState(false);
     const [state, action, pending] = useActionState(createSchool, undefined);
 
@@ -60,8 +64,9 @@ export function CreateSchoolDialog() {
         if (state?.message === 'School created successfully') {
             setOpen(false);
             reset();
+            if (onSuccess) onSuccess();
         }
-    }, [state, reset]);
+    }, [state, reset, onSuccess]);
 
     const onSubmit = (data: FormData) => {
         const formData = new FormData();
