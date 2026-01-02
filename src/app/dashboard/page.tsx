@@ -15,6 +15,10 @@ export default async function DashboardPage() {
         redirect('/admin');
     }
 
+    if (session.role === 'SchoolAdmin') {
+        redirect('/school');
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-7xl mx-auto">
