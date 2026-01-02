@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'nodejs';
+
 import { useActionState, Suspense } from 'react';
 import { login } from '@/actions/auth';
 import { useSearchParams } from 'next/navigation';
