@@ -2,7 +2,7 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { logout } from '@/actions/auth';
-import { LayoutDashboard, School, LogOut } from 'lucide-react';
+import { LayoutDashboard, School, LogOut, Settings } from 'lucide-react';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +42,14 @@ export default async function AdminLayout({
                     >
                         <School size={20} />
                         <span>Schools</span>
+                    </Link>
+
+                    <Link
+                        href="/admin/settings"
+                        className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
+                    >
+                        <Settings size={20} />
+                        <span>Settings</span>
                     </Link>
                 </nav>
 
