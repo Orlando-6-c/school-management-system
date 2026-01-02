@@ -5,7 +5,7 @@ import { createSchool, impersonateSchoolAdmin } from '@/actions/school';
 import { useFormStatus } from 'react-dom';
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { School } from '../../../generated/prisma';
+import { School } from '@prisma/client';
 
 // We need a way to fetch schools for the client component. 
 // Ideally we pass them as props from a server component wrapper or use a server action to fetch.
