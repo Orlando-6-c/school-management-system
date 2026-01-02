@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { logout } from '@/actions/auth';
 import { LayoutDashboard, School, LogOut } from 'lucide-react';
 
+export const runtime = 'nodejs';
+
 export default async function AdminLayout({
     children,
 }: {

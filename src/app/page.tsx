@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 
+export const runtime = 'nodejs';
+
 export default async function LandingPage() {
   const session = await getSession();
 
