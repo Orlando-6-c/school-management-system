@@ -114,6 +114,10 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
             session.schoolSlug = school.slug;
             session.isSuperAdmin = false;
             await session.save();
+            await session.save();
+            if (user.role === 'SchoolAdmin') {
+                redirect('/school');
+            }
             redirect('/dashboard');
         }
     }

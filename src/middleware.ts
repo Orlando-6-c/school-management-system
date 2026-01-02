@@ -12,8 +12,8 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    // 2. Dashboard Routes (Authenticated Users)
-    if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    // 2. School Routes (SchoolAdmin only for now, eventually other roles)
+    if (request.nextUrl.pathname.startsWith('/school')) {
         if (!session.userId) {
             return NextResponse.redirect(new URL('/login', request.url));
         }
@@ -24,6 +24,8 @@ export async function middleware(request: NextRequest) {
         if (session.userId) {
             if (session.isSuperAdmin) {
                 return NextResponse.redirect(new URL('/admin', request.url));
+            } else if (session.role === 'SchoolAdmin') {
+                return NextResponse.redirect(new URL('/school', request.url));
             } else {
                 return NextResponse.redirect(new URL('/dashboard', request.url));
             }
@@ -34,5 +36,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/admin/:path*', '/dashboard/:path*', '/login'],
+    matcher: ['/admin/:path*', '/school/:path*', '/dashboard/:path*', '/login'],
 };
