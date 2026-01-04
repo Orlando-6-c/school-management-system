@@ -2,7 +2,22 @@ import { getSession } from '@/lib/session';
 import db from '@/lib/db';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Eye } from 'lucide-react';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Plus, Search, Edit, Printer, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export const runtime = 'nodejs';
@@ -10,33 +25,27 @@ export const runtime = 'nodejs';
 export default async function StudentsPage() {
     const session = await getSession();
 
-    // Fetch students
+    // 1. Fetch Students with Photo and Relations
     const students = await db.student.findMany({
         where: { schoolId: session.schoolId! },
         include: {
             class: true,
             guardian: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
     });
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Students Directory</h1>
-                    <p className="text-gray-500 mt-2">
-                        Manage your school's student body.
-                    </p>
-                </div>
-                <div className="flex space-x-2 w-full sm:w-auto">
-                    <Link href="/school/academics">
-                        <Button variant="outline" className="w-full sm:w-auto bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
-                            Manage Classes
-                        </Button>
-                    </Link>
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Student Directory</h1>
+                <div className="flex gap-2">
+                    <Button variant="outline">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print Directory
+                    </Button>
                     <Link href="/school/students/new">
-                        <Button className="w-full sm:w-auto">
+                        <Button>
                             <Plus className="mr-2 h-4 w-4" />
                             New Admission
                         </Button>
@@ -44,90 +53,119 @@ export default async function StudentsPage() {
                 </div>
             </div>
 
-            {/* Filters (Placeholder) */}
-            <div className="flex items-center space-x-2 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <Search className="h-4 w-4 text-gray-400" />
-                <Input
-                    placeholder="Search by name, roll no, or CPID..."
-                    className="border-0 focus-visible:ring-0 px-0 h-auto text-sm"
-                />
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-4">Roll No</th>
-                                <th className="px-6 py-4">Student Name</th>
-                                <th className="px-6 py-4">Class</th>
-                                <th className="px-6 py-4">Monthly Fee</th> {/* Added Column */}
-                                <th className="px-6 py-4">Guardian</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
+            <Card className="bg-white border-gray-200 shadow-sm">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-gray-900">Enrolled Students</CardTitle>
+                            <CardDescription>
+                                Total Students: {students.length}
+                            </CardDescription>
+                        </div>
+                        <div className="relative w-64">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                            <Input
+                                placeholder="Search by name, roll no..."
+                                className="pl-8 bg-white border-gray-300"
+                            />
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[80px]">Photo</TableHead>
+                                <TableHead>Roll No</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Class</TableHead>
+                                <TableHead>Guardian</TableHead>
+                                <TableHead>Fee</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {students.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500 italic">
-                                        No students found. Admit your first student!
-                                    </td>
-                                </tr>
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center h-24 text-gray-500">
+                                        No students found. Admit a student to get started.
+                                    </TableCell>
+                                </TableRow>
                             ) : (
-                                students.map((student: any) => ( // Typed as any to bypass implicit any error temporarily
-                                    <tr key={student.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-gray-900">
+                                students.map((student) => (
+                                    <TableRow key={student.id}>
+                                        {/* Photo Column */}
+                                        <TableCell>
+                                            {student.photograph ? (
+                                                <img
+                                                    src={student.photograph}
+                                                    alt={student.name}
+                                                    className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                                />
+                                            ) : (
+                                                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 border border-gray-200">
+                                                    No Pic
+                                                </div>
+                                            )}
+                                        </TableCell>
+
+                                        <TableCell className="font-medium text-gray-900">
                                             {student.rollNumber}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{student.name}</div>
-                                            <div className="text-xs text-gray-500">{student.gender}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                                                {/* Safe Access and Fallback */}
-                                                {student.class?.name || 'Unassigned'} {student.class?.section ? `(${student.class.section})` : ''}
+                                        </TableCell>
+                                        <TableCell className="text-gray-700">
+                                            {student.name}
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                                                {student.class?.name ?? 'Unassigned'} {student.class?.section ? `(${student.class.section})` : ''}
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900">
+                                        </TableCell>
+                                        <TableCell className="text-gray-600">
+                                            {student.guardian?.name || 'N/A'}
+                                            <div className="text-xs text-gray-400">
+                                                {student.guardian?.contact || 'No Contact'}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
                                             {Number(student.discountPercentage) > 0 ? (
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs text-gray-400 line-through">
-                                                        {Number(student.monthlyFees).toLocaleString()}
+                                                    <span className="text-xs line-through text-gray-400">
+                                                        {Number(student.monthlyFees)}
                                                     </span>
                                                     <span className="font-bold text-gray-900">
-                                                        {Number(student.finalFee).toLocaleString()}
+                                                        {Number(student.finalFee)}
                                                     </span>
                                                 </div>
                                             ) : (
-                                                Number(student.finalFee).toLocaleString()
+                                                <span className="font-bold text-gray-900">
+                                                    {Number(student.monthlyFees)}
+                                                </span>
                                             )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-gray-900">{student.guardian?.name}</div>
-                                            <div className="text-xs text-gray-500">{student.guardian?.contact}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.isActive
-                                                ? 'bg-green-50 text-green-700'
-                                                : 'bg-red-50 text-red-700'
-                                                }`}>
-                                                {student.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-indigo-600">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+
+                                        {/* Actions Column */}
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                {/* Edit Button */}
+                                                <Link href={`/school/students/${student.id}/edit`}>
+                                                    <Button variant="ghost" size="icon" title="Edit Student">
+                                                        <Edit className="h-4 w-4 text-blue-600" />
+                                                    </Button>
+                                                </Link>
+
+                                                {/* Individual Print Button */}
+                                                <Button variant="ghost" size="icon" title="Print Student Info">
+                                                    <Printer className="h-4 w-4 text-gray-600" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
                                 ))
                             )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }
