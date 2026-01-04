@@ -25,7 +25,7 @@ const studentSchema = z.object({
     classId: z.string().min(1),
 
     // Financials
-    annualFee: z.coerce.number().min(0),
+    monthlyFees: z.coerce.number().min(0), // Updated from annualFee
     discountPercentage: z.coerce.number().min(0).max(100),
 });
 
@@ -45,6 +45,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
     const result = studentSchema.safeParse(Object.fromEntries(formData));
 
     if (!result.success) {
+        // console.log("Validation Errors:", result.error.flatten().fieldErrors);
         return {
             errors: result.error.flatten().fieldErrors,
             message: 'Validation failed'
@@ -84,12 +85,12 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
             where: { id: data.classId }
         });
 
-        // If not found by ID, try finding by name within this school
+        // If not found by ID (legacy support needed?), try name, but with Dropdown ID is preferred.
         if (!classData) {
             classData = await db.class.findFirst({
                 where: {
                     schoolId: session.schoolId,
-                    name: data.classId // Assuming input might be the name
+                    name: data.classId
                 }
             });
         }
@@ -111,14 +112,14 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
         );
 
         // 3. Create Student (SRS 3.2.1)
-        const finalFee = data.annualFee * (1 - data.discountPercentage / 100);
+        const finalFee = data.monthlyFees * (1 - data.discountPercentage / 100); // Updated calculation base
 
         const newStudent = await db.$transaction(async (tx) => {
             const student = await tx.student.create({
                 data: {
                     schoolId: session.schoolId,
                     guardianId: guardian!.id,
-                    classId: classData!.id, // Use the resolved ID, not data.classId (which might be a name)
+                    classId: classData!.id,
                     name: data.name,
                     rollNumber: rollNumber,
                     gender: data.gender,
@@ -126,13 +127,13 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                     dateOfAdmission: data.dateOfAdmission,
                     bFormNumber: data.bFormNumber,
                     photograph: data.photograph || null,
-                    annualFee: data.annualFee,
+                    monthlyFees: data.monthlyFees, // Updated field
                     discountPercentage: data.discountPercentage,
                     finalFee: finalFee,
                 }
             });
 
-            // 4. Create User Account (Role: STUDENT)
+            // 4. Create User Account (Role: STUDENT - ReadOnly for now)
             // Username: RollNumber
             const hashedPassword = await hashPassword(student.rollNumber);
 
