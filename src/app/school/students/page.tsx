@@ -29,12 +29,19 @@ export default async function StudentsPage() {
                         Manage your school's student body.
                     </p>
                 </div>
-                <Link href="/school/students/new">
-                    <Button className="w-full sm:w-auto">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Admission
-                    </Button>
-                </Link>
+                <div className="flex space-x-2 w-full sm:w-auto">
+                    <Link href="/school/academics">
+                        <Button variant="outline" className="w-full sm:w-auto bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
+                            Manage Classes
+                        </Button>
+                    </Link>
+                    <Link href="/school/students/new">
+                        <Button className="w-full sm:w-auto">
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Admission
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             {/* Filters (Placeholder) */}
