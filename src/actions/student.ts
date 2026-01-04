@@ -36,6 +36,28 @@ export type AdmissionState = {
     studentId?: string;
 };
 
+export async function getGuardianByCNIC(cnic: string) {
+    const session = await getSession();
+    if (!session.schoolId) return null;
+
+    const guardian = await db.guardian.findUnique({
+        where: {
+            cnic_schoolId: {
+                cnic: cnic,
+                schoolId: session.schoolId
+            }
+        },
+        select: {
+            name: true,
+            relation: true,
+            contact: true,
+            email: true
+        }
+    });
+
+    return guardian;
+}
+
 export async function admitStudent(prevState: AdmissionState | undefined, formData: FormData): Promise<AdmissionState> {
     const session = await getSession();
     if (!session.userId || !session.schoolId) {
