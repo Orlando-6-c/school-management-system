@@ -516,3 +516,28 @@ model Event {
   @@index([startDate])
   @@index([endDate])
 }
+
+/// Teacher - Academic Staff (SRS 3.3)
+model Teacher {
+  id             String   @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String
+  gender         String
+  cnic           String
+  qualification  String
+  subject        String   // Main subject specialization
+  experience     String?  // e.g., "5 Years"
+  joiningDate    DateTime @default(now())
+  salary         Float    @default(0)
+  address        String?
+  photograph     String?  // Base64 string
+  schoolId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@index([schoolId])
+}
