@@ -91,7 +91,20 @@ export default async function StudentsPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-medium text-gray-900">
-                                            {Number(student.monthlyFees).toLocaleString()} {/* Use new field */}
+                                            <td className="px-6 py-4 font-medium text-gray-900">
+                                                {Number(student.discountPercentage) > 0 ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs text-gray-400 line-through">
+                                                            {Number(student.monthlyFees).toLocaleString()}
+                                                        </span>
+                                                        <span className="font-bold text-gray-900">
+                                                            {Number(student.finalFee).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    Number(student.finalFee).toLocaleString()
+                                                )}
+                                            </td>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-gray-900">{student.guardian?.name}</div>
