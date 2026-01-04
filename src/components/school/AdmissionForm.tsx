@@ -13,13 +13,8 @@ interface ClassItem {
     id: string;
     name: string;
     section: string | null;
+    monthlyTuitionFee: number; // Added fee
 }
-
-const HARDCODED_CLASSES = [
-    "Play Group", "Nursery", "Prep",
-    "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5",
-    "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"
-];
 
 interface FormValues {
     guardianCnic: string;
@@ -32,37 +27,48 @@ interface FormValues {
     bFormNumber: string;
     classId: string;
     dateOfAdmission: string;
-    annualFee: number;
+    monthlyFees: number; // Renamed from annualFee
     discountPercentage: number;
 }
 
 export function AdmissionForm({ classes }: { classes: ClassItem[] }) {
-    // Keep using useActionState for form submission handling
     const [state, action] = useActionState(admitStudent, undefined);
-    const { register, watch, handleSubmit, formState: { isSubmitting } } = useForm<FormValues>({
+    const { register, watch, setValue, formState: { isSubmitting } } = useForm<FormValues>({
         defaultValues: {
             dateOfAdmission: new Date().toISOString().split('T')[0],
-            annualFee: 0,
+            monthlyFees: 0,
             discountPercentage: 0,
-            gender: "Male" // Default
+            gender: "Male"
         }
     });
 
-    // Fee Calculation using Watch
-    const annualFee = watch("annualFee");
+    // Auto-Fill Logic
+    const selectedClassId = watch("classId");
+
+    useEffect(() => {
+        if (selectedClassId) {
+            // Find class (checking ID or Name for compatibility, though passing ID from new dropdown)
+            const selectedClass = classes.find(c => c.id === selectedClassId || c.name === selectedClassId);
+            if (selectedClass) {
+                setValue("monthlyFees", Number(selectedClass.monthlyTuitionFee));
+            }
+        }
+    }, [selectedClassId, classes, setValue]);
+
+    // Fee Calculation
+    const monthlyFees = watch("monthlyFees");
     const discount = watch("discountPercentage");
     const [finalFee, setFinalFee] = useState<number>(0);
 
     const [cnicSearch, setCnicSearch] = useState('');
     const [guardianFound, setGuardianFound] = useState(false);
-    const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
-        const fee = Number(annualFee) || 0;
+        const fee = Number(monthlyFees) || 0;
         const disc = Number(discount) || 0;
         const calculated = fee * (1 - disc / 100);
         setFinalFee(Math.round(calculated));
-    }, [annualFee, discount]);
+    }, [monthlyFees, discount]);
 
     const handleCnicSearch = async () => {
         alert('Sibling search functionality coming in next update. Please fill details manually.');
@@ -70,20 +76,6 @@ export function AdmissionForm({ classes }: { classes: ClassItem[] }) {
 
     const inputClasses = "bg-white text-gray-900 border-gray-300 focus:ring-gray-400 focus:border-gray-400";
     const labelClasses = "text-gray-700 font-medium";
-
-    // Since we are using react-hook-form but also a server action, 
-    // we need to bridge them. 
-    // Ideally, the form action attribute handles it, but react-hook-form wants handleSubmit.
-    // However, we can use the form action directly and register inputs ensuring 'name' props are set.
-    // React Hook Form 'register' sets 'name'.
-    // SO: <form action={action}> + {...register('fieldName')} works fine for simple cases.
-    // But validation? Client side validation with RHF?
-    // User requested: "Enable editing... use react-hook-form registration correctly."
-    // And "Auto-Calculation: Use watch()."
-
-    // We will use standard form submission via 'action={action}' for the Server Action.
-    // We will use RHF only for the controlled inputs (fees) and watching them.
-    // 'register' attaches refs and onChange.
 
     return (
         <form action={action} className="space-y-8">
@@ -174,15 +166,15 @@ export function AdmissionForm({ classes }: { classes: ClassItem[] }) {
                                 {...register("classId", { required: true })}
                             >
                                 <option value="">Select Class</option>
-                                {HARDCODED_CLASSES.map((clsName) => (
-                                    <option key={clsName} value={
-                                        // Attempt to find ID, else use Name (backend handled)
-                                        classes.find(c => c.name === clsName)?.id || clsName
-                                    }>
-                                        {clsName}
+                                {classes.map((cls) => (
+                                    <option key={cls.id} value={cls.id}>
+                                        {cls.name} {cls.section ? `(${cls.section})` : ''} - Fee: {Number(cls.monthlyTuitionFee)}
                                     </option>
                                 ))}
                             </select>
+                            <p className="text-xs text-gray-500">
+                                Selecting a class will auto-fill the monthly fee.
+                            </p>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="dateOfAdmission" className={labelClasses}>Date of Admission</Label>
@@ -204,14 +196,14 @@ export function AdmissionForm({ classes }: { classes: ClassItem[] }) {
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-3 gap-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="annualFee" className={labelClasses}>Annual/Monthly Fee</Label>
+                            <Label htmlFor="monthlyFees" className={labelClasses}>Monthly Tuition Fee</Label>
                             <Input
-                                id="annualFee"
+                                id="monthlyFees"
                                 type="number"
                                 min="0"
                                 required
                                 className={inputClasses}
-                                {...register("annualFee", { valueAsNumber: true })}
+                                {...register("monthlyFees", { valueAsNumber: true })}
                             />
                         </div>
                         <div className="grid gap-2">

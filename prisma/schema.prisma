@@ -134,7 +134,7 @@ model Class {
   gradeLevel  Int // Numeric level for sorting (0 = Playgroup, 1-9 for grades)
   hexCode     String // Hexadecimal code for roll number generation
   section     String?
-  annualFee   Decimal  @db.Decimal(10, 2)
+  monthlyTuitionFee   Decimal  @db.Decimal(10, 2) // Renamed from annualFee
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -192,7 +192,7 @@ model Student {
   bFormNumber        String // B-Form (Pakistan child registration)
   gender             Gender
   photograph         String? // URL/path to photo
-  annualFee          Decimal  @db.Decimal(10, 2)
+  monthlyFees        Decimal  @db.Decimal(10, 2) // Renamed from annualFee
   discountPercentage Decimal  @default(0) @db.Decimal(5, 2)
   finalFee           Decimal  @db.Decimal(10, 2) // Auto-calculated
   isActive           Boolean  @default(true) // Soft deletion - SRS 3.2.7
