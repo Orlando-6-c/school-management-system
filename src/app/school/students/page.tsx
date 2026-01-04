@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Search, Edit, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import PrintButton from '@/components/PrintButton';
 
 export const runtime = 'nodejs';
 
@@ -35,15 +36,14 @@ export default async function StudentsPage() {
         orderBy: { createdAt: 'desc' },
     });
 
+
+
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900">Student Directory</h1>
                 <div className="flex gap-2">
-                    <Button variant="outline">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print Directory
-                    </Button>
+                    <PrintButton label="Print Directory" />
                     <Link href="/school/students/new">
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
@@ -53,8 +53,8 @@ export default async function StudentsPage() {
                 </div>
             </div>
 
-            <Card className="bg-white border-gray-200 shadow-sm">
-                <CardHeader>
+            <Card className="bg-white border-gray-200 shadow-sm print:shadow-none print:border-none">
+                <CardHeader className="print:hidden">
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle className="text-gray-900">Enrolled Students</CardTitle>
@@ -71,7 +71,7 @@ export default async function StudentsPage() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="print:p-0">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -81,7 +81,7 @@ export default async function StudentsPage() {
                                 <TableHead>Class</TableHead>
                                 <TableHead>Guardian</TableHead>
                                 <TableHead>Fee</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead className="text-right print:hidden">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -144,7 +144,7 @@ export default async function StudentsPage() {
                                         </TableCell>
 
                                         {/* Actions Column */}
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right print:hidden">
                                             <div className="flex justify-end gap-2">
                                                 {/* Edit Button */}
                                                 <Button variant="ghost" size="icon" title="Edit Student" asChild>
@@ -154,8 +154,10 @@ export default async function StudentsPage() {
                                                 </Button>
 
                                                 {/* Individual Print Button */}
-                                                <Button variant="ghost" size="icon" title="Print Student Info">
-                                                    <Printer className="h-4 w-4 text-gray-600" />
+                                                <Button variant="ghost" size="icon" title="Print Student Info" asChild>
+                                                    <Link href={`/school/students/${student.id}/print`} target="_blank">
+                                                        <Printer className="h-4 w-4 text-gray-600" />
+                                                    </Link>
                                                 </Button>
                                             </div>
                                         </TableCell>

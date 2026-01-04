@@ -182,3 +182,101 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
         return { message: 'Failed to admit student' };
     }
 }
+
+export async function updateStudent(id: string, prevState: AdmissionState | undefined, formData: FormData): Promise<AdmissionState> {
+    const session = await getSession();
+    if (!session.userId || !session.schoolId) {
+        return { message: 'Unauthorized' };
+    }
+
+    const result = studentSchema.safeParse(Object.fromEntries(formData));
+
+    if (!result.success) {
+        return {
+            errors: result.error.flatten().fieldErrors,
+            message: 'Validation failed'
+        };
+    }
+
+    const data = result.data;
+
+    try {
+        // 1. Find or Create Guardian (if changed)
+        let guardian = await db.guardian.findUnique({
+            where: {
+                cnic_schoolId: {
+                    cnic: data.guardianCnic,
+                    schoolId: session.schoolId
+                }
+            }
+        });
+
+        if (!guardian) {
+            guardian = await db.guardian.create({
+                data: {
+                    schoolId: session.schoolId,
+                    name: data.guardianName,
+                    cnic: data.guardianCnic,
+                    relation: data.guardianRelation,
+                    contact: data.guardianContact,
+                    email: data.guardianEmail || null,
+                    dateOfBirth: new Date(), // Simple default, realistically should be provided
+                }
+            });
+        } else {
+            // Update guardian details if needed? For now, let's assume we update contact info
+            await db.guardian.update({
+                where: { id: guardian.id },
+                data: {
+                    name: data.guardianName,
+                    relation: data.guardianRelation,
+                    contact: data.guardianContact,
+                    email: data.guardianEmail || null,
+                }
+            });
+        }
+
+        // 2. Resolve Class
+        let classData = await db.class.findUnique({ where: { id: data.classId } });
+        if (!classData) {
+            classData = await db.class.findFirst({
+                where: { schoolId: session.schoolId, name: data.classId }
+            });
+        }
+        if (!classData) return { message: 'Invalid Class' };
+
+        // 3. Update Student
+        const finalFee = data.monthlyFees * (1 - data.discountPercentage / 100);
+
+        await db.student.update({
+            where: {
+                id: id,
+                schoolId: session.schoolId // Ensure ownership
+            },
+            data: {
+                guardianId: guardian.id,
+                classId: classData.id,
+                name: data.name,
+                gender: data.gender,
+                dateOfBirth: data.dateOfBirth,
+                dateOfAdmission: data.dateOfAdmission,
+                bFormNumber: data.bFormNumber,
+                photograph: data.photograph || null,
+                monthlyFees: data.monthlyFees,
+                discountPercentage: data.discountPercentage,
+                finalFee: finalFee,
+            }
+        });
+
+        revalidatePath('/school/students');
+        revalidatePath(`/school/students/${id}`);
+        return { success: true, message: 'Student updated successfully' };
+
+    } catch (error: any) {
+        console.error(error);
+        if (error.code === 'P2002') {
+            return { message: 'Duplicate record (B-Form or User)' };
+        }
+        return { message: 'Failed to update student' };
+    }
+}
