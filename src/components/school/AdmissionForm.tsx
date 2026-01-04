@@ -26,7 +26,7 @@ const initialState = {
     success: false,
 };
 
-export default function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default to empty array
+export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default to empty array
     const [state, action, isSubmitting] = useActionState(admitStudent, initialState);
 
     const { register, setValue, watch, formState: { errors } } = useForm({
