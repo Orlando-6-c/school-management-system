@@ -17,7 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Plus, Search, Edit, Printer, FileText } from 'lucide-react';
+import { Plus, Search, Edit, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export const runtime = 'nodejs';
@@ -92,7 +92,7 @@ export default async function StudentsPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                students.map((student) => (
+                                students.map((student: any) => (
                                     <TableRow key={student.id}>
                                         {/* Photo Column */}
                                         <TableCell>
@@ -147,11 +147,11 @@ export default async function StudentsPage() {
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
                                                 {/* Edit Button */}
-                                                <Link href={`/school/students/${student.id}/edit`}>
-                                                    <Button variant="ghost" size="icon" title="Edit Student">
+                                                <Button variant="ghost" size="icon" title="Edit Student" asChild>
+                                                    <Link href={`/school/students/${student.id}/edit`}>
                                                         <Edit className="h-4 w-4 text-blue-600" />
-                                                    </Button>
-                                                </Link>
+                                                    </Link>
+                                                </Button>
 
                                                 {/* Individual Print Button */}
                                                 <Button variant="ghost" size="icon" title="Print Student Info">

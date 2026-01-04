@@ -139,7 +139,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
         const newStudent = await db.$transaction(async (tx) => {
             const student = await tx.student.create({
                 data: {
-                    schoolId: session.schoolId,
+                    schoolId: session.schoolId!,
                     guardianId: guardian!.id,
                     classId: classData!.id,
                     name: data.name,
@@ -161,7 +161,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
 
             await tx.user.create({
                 data: {
-                    schoolId: session.schoolId,
+                    schoolId: session.schoolId!,
                     username: student.rollNumber,
                     password: hashedPassword,
                     role: 'ReadOnly',
