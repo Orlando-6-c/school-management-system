@@ -251,33 +251,27 @@ model Attendance {
 // HUMAN RESOURCE MANAGEMENT (SRS 3.3)
 // ============================================================================
 
-/// Teacher - Teaching staff (SRS 3.3.1)
+/// Teacher - Academic Staff (SRS 3.3)
 model Teacher {
-  id                String   @id @default(cuid())
-  name              String
-  fatherName        String
-  dateOfBirth       DateTime
-  cnic              String
-  contact           String
-  gender            Gender
-  salary            Decimal  @db.Decimal(10, 2)
-  subject           String
-  educationalDegree String
-  photograph        String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // School isolation
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-
-  // Teacher assignments to classes
-  classAssignments TeacherClassAssignment[]
-  salarySlips      SalarySlip[]
-
-  @@unique([cnic, schoolId])
-  @@index([schoolId])
+  id             String   @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String
+  gender         String
+  cnic           String
+  qualification  String
+  subject        String
+  experience     String?
+  joiningDate    DateTime @default(now())
+  salary         Float    @default(0)
+  address        String?
+  photograph     String?
+  schoolId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  school         School   @relation(fields: [schoolId], references: [id])
 }
 
 /// TeacherClassAssignment - Many-to-many between Teacher and Class
@@ -517,27 +511,4 @@ model Event {
   @@index([endDate])
 }
 
-/// Teacher - Academic Staff (SRS 3.3)
-model Teacher {
-  id             String   @id @default(uuid())
-  firstName      String
-  lastName       String
-  email          String?
-  phone          String
-  gender         String
-  cnic           String
-  qualification  String
-  subject        String   // Main subject specialization
-  experience     String?  // e.g., "5 Years"
-  joiningDate    DateTime @default(now())
-  salary         Float    @default(0)
-  address        String?
-  photograph     String?  // Base64 string
-  schoolId       String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  
-  @@index([schoolId])
-}
+
