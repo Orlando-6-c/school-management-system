@@ -2,8 +2,6 @@ import { getSession } from '@/lib/session';
 import db from '@/lib/db';
 import { CreateClassDialog } from '@/components/school/CreateClassDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge'; // Might need to scaffold or uses pan/div
-// Actually I'll use standard Tailwind for badges if component missing, but let's assume I can use simple spans.
 
 export const runtime = 'nodejs';
 
