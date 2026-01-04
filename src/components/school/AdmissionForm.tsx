@@ -40,11 +40,7 @@ useEffect(() => {
 const handleCnicSearch = async () => {
     const cnic = watch("guardianCnic");
     if (!cnic || cnic.length < 13) {
-        toast({
-            title: "Invalid CNIC",
-            description: "Please enter a valid 13-digit CNIC to search.",
-            variant: "destructive"
-        });
+        alert("Invalid CNIC: Please enter a valid 13-digit CNIC to search.");
         return;
     }
 
@@ -58,25 +54,14 @@ const handleCnicSearch = async () => {
             if (guardian.email) setValue("guardianEmail", guardian.email);
 
             setGuardianFound(true);
-            toast({
-                title: "Guardian Found!",
-                description: "Sibling linking active. Guardian details auto-filled.",
-                className: "bg-green-50 text-green-900 border-green-200"
-            });
+            alert("Guardian Found! Sibling linking active. Guardian details auto-filled.");
         } else {
             setGuardianFound(false);
-            toast({
-                title: "No Guardian Found",
-                description: "No existing records found for this CNIC. Please fill details manually.",
-            });
+            alert("No Guardian Found: No existing records found for this CNIC. Please fill details manually.");
         }
     } catch (error) {
         console.error("Search error", error);
-        toast({
-            title: "Search Failed",
-            description: "Could not fetch guardian details. Try again.",
-            variant: "destructive"
-        });
+        alert("Search Failed: Could not fetch guardian details. Try again.");
     } finally {
         setSearching(false);
     }
@@ -86,11 +71,7 @@ const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
         if (file.size > 1024 * 1024 * 2) { // 2MB Limit
-            toast({
-                title: "File too large",
-                description: "Image size should be less than 2MB",
-                variant: "destructive"
-            });
+            alert("File too large: Image size should be less than 2MB");
             return;
         }
         const reader = new FileReader();
