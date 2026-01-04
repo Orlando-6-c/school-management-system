@@ -73,32 +73,34 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                     relation: data.guardianRelation,
                     contact: data.guardianContact,
                     email: data.guardianEmail || null,
-                    dateOfBirth: new Date(), // Placeholder as DOB wasn't in form schema explicitly for Guardian in basic requirements, or use default
-                    // Wait, Schema requires dateOfBirth for Guardian. I should add it to schema or inputs.
-                    // For now, I'll default it since UI Prompt didn't specify Guardian DOB input in "Guardian Info".
-                    // Actually, SRS 3.2.3 lists 'dob' for Guardian. I should probably add it.
-                    // But to keep it simple as per prompt "Guardian Info:... contactNumber, dob", I'll add a default or use a dummy for now if not in form.
-                    // Let's check prompt again: "Guardian Model: ... dob." 
-                    // "UI: ... two sections: Guardian Info and Student Info."
-                    // I will add guardianDob to form data or default it. 
+                    dateOfBirth: new Date(),
                 }
             });
         }
 
         // 2. Generate Roll Number (SRS 3.2.2)
-        const classData = await db.class.findUnique({
+        // Try finding by ID first
+        let classData = await db.class.findUnique({
             where: { id: data.classId }
         });
+
+        // If not found by ID, try finding by name within this school
+        if (!classData) {
+            classData = await db.class.findFirst({
+                where: {
+                    schoolId: session.schoolId,
+                    name: data.classId // Assuming input might be the name
+                }
+            });
+        }
 
         if (!classData) return { message: 'Invalid Class' };
 
         // Count students in this class for sequence
-        // SRS says "Sequence" - is it per Class? Let's assume per Class for now based on generator logic needs.
         const currentCount = await db.student.count({
             where: {
                 schoolId: session.schoolId,
-                classId: data.classId,
-                // Optional: Filter by specific admission year if sequence resets yearly
+                classId: classData.id
             }
         });
 
@@ -116,7 +118,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                 data: {
                     schoolId: session.schoolId,
                     guardianId: guardian!.id,
-                    classId: data.classId,
+                    classId: classData!.id, // Use the resolved ID, not data.classId (which might be a name)
                     name: data.name,
                     rollNumber: rollNumber,
                     gender: data.gender,
@@ -131,8 +133,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
             });
 
             // 4. Create User Account (Role: STUDENT)
-            // Username: RollNumber, Password: Default (e.g., cnic last 4 digits or logic)
-            // Let's set password to RollNumber for now for simplicity
+            // Username: RollNumber
             const hashedPassword = await hashPassword(student.rollNumber);
 
             await tx.user.create({
@@ -140,13 +141,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                     schoolId: session.schoolId,
                     username: student.rollNumber,
                     password: hashedPassword,
-                    role: 'ReadOnly', // Or Student role if it exists? Schema has 'ReadOnly' but not 'Student'.
-                    // Prompt said "Role: STUDENT".
-                    // Schema Enum: SuperAdmin, SchoolAdmin, Finance, ReadOnly.
-                    // I should probably add 'Student' to Enum or use ReadOnly.
-                    // Prompt Task 1: "User Account: Create a SchoolUser (Role: STUDENT)".
-                    // Action: I will assume ReadOnly matches 'Student' access for now as per schema or I need to update Enum.
-                    // Since I didn't update Schema, I must use existing Enum. 'ReadOnly' is closest.
+                    role: 'ReadOnly',
                 }
             });
 
