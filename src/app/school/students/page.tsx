@@ -24,7 +24,7 @@ export default async function StudentsPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Students</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Students Directory</h1>
                     <p className="text-gray-500 mt-2">
                         Manage your school's student body.
                     </p>
@@ -87,8 +87,8 @@ export default async function StudentsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.isActive
-                                                    ? 'bg-green-50 text-green-700'
-                                                    : 'bg-red-50 text-red-700'
+                                                ? 'bg-green-50 text-green-700'
+                                                : 'bg-red-50 text-red-700'
                                                 }`}>
                                                 {student.isActive ? 'Active' : 'Inactive'}
                                             </span>
