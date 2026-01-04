@@ -46,8 +46,10 @@ export default async function BatchPrintPage({ searchParams }: { searchParams: {
                     No students found matching your criteria.
                 </div>
             ) : (
-                students.map((student) => (
-                    <StudentPrintTemplate key={student.id} student={student} />
+                students.map((student: any) => (
+                    <div key={student.id} style={{ pageBreakAfter: 'always' }}>
+                        <StudentPrintTemplate student={student} />
+                    </div>
                 ))
             )}
         </div>
