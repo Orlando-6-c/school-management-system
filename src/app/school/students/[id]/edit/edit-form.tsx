@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEffect } from 'react';
 
 const initialState = {
@@ -71,15 +72,15 @@ export default function EditStudentForm({ student, classes }: { student: any, cl
 
                     <div className="space-y-2">
                         <Label htmlFor="gender">Gender</Label>
-                        <select
-                            id="gender"
-                            name="gender"
-                            defaultValue={student.gender}
-                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
+                        <Select name="gender" defaultValue={student.gender}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Male">Male</SelectItem>
+                                <SelectItem value="Female">Female</SelectItem>
+                            </SelectContent>
+                        </Select>
                         {state.errors?.gender && <p className="text-red-500 text-sm">{state.errors.gender}</p>}
                     </div>
 
@@ -102,16 +103,18 @@ export default function EditStudentForm({ student, classes }: { student: any, cl
 
                     <div className="space-y-2">
                         <Label htmlFor="classId">Class</Label>
-                        <select
-                            id="classId"
-                            name="classId"
-                            defaultValue={student.classId}
-                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name} {c.section ? `(${c.section})` : ''}</option>
-                            ))}
-                        </select>
+                        <Select name="classId" defaultValue={student.classId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {classes.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                        {c.name} {c.section ? `(${c.section})` : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         {state.errors?.classId && <p className="text-red-500 text-sm">{state.errors.classId}</p>}
                     </div>
 
@@ -160,7 +163,7 @@ export default function EditStudentForm({ student, classes }: { student: any, cl
 
             <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" asChild>
-                    <a href={`/school/students/${student.id}`}>Cancel</a>
+                    <a href="/school/students">Cancel</a>
                 </Button>
                 <Button type="submit">Update Student</Button>
             </div>

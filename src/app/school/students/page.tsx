@@ -19,14 +19,14 @@ import {
 } from '@/components/ui/table';
 import { Plus, Search, Edit, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import PrintButton from '@/components/PrintButton';
+import PrintDirectoryButton from '@/components/school/PrintDirectoryButton';
 
 export const runtime = 'nodejs';
 
 export default async function StudentsPage() {
     const session = await getSession();
 
-    // 1. Fetch Students with Photo and Relations
+    // 1. Fetch Students
     const students = await db.student.findMany({
         where: { schoolId: session.schoolId! },
         include: {
@@ -36,14 +36,18 @@ export default async function StudentsPage() {
         orderBy: { createdAt: 'desc' },
     });
 
-
+    // 2. Fetch Classes for Filter
+    const classes = await db.class.findMany({
+        where: { schoolId: session.schoolId!, isActive: true },
+        orderBy: { gradeLevel: 'asc' }
+    });
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900">Student Directory</h1>
                 <div className="flex gap-2">
-                    <PrintButton label="Print Directory" />
+                    <PrintDirectoryButton classes={classes} />
                     <Link href="/school/students/new">
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />

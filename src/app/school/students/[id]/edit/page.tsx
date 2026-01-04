@@ -36,7 +36,7 @@ export default async function EditStudentPage({ params }: { params: { id: string
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Edit Student</h1>
                 <Button variant="outline" asChild>
-                    <a href={`/school/students/${id}`}>Cancel</a>
+                    <a href="/school/students">Cancel</a>
                 </Button>
             </div>
 
