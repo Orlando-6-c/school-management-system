@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && npx prisma db push --force-reset && next build",
+    "build": "npx prisma generate && npx prisma db push --force-reset && npx prisma db seed && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
@@ -42,5 +42,8 @@
     "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   }
 }
