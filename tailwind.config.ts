@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 
+// Forced update to trigger deployment build
 const config: Config = {
     darkMode: ["class"],
     content: [
