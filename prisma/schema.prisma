@@ -272,6 +272,12 @@ model Teacher {
   updatedAt      DateTime @updatedAt
   
   school         School   @relation(fields: [schoolId], references: [id])
+
+  // Teacher assignments to classes
+  classAssignments TeacherClassAssignment[]
+  salarySlips      SalarySlip[]
+  
+  @@index([schoolId])
 }
 
 /// TeacherClassAssignment - Many-to-many between Teacher and Class
