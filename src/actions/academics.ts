@@ -46,3 +46,37 @@ export async function promoteStudents(prevState: any, formData: FormData) {
         return { message: 'Failed to promote students.' };
     }
 }
+
+export async function createClass(prevState: any, formData: FormData) {
+    const session = await getSession();
+    if (!session.schoolId) return { message: 'Unauthorized' };
+
+    const name = formData.get('name') as string;
+    const gradeLevel = parseInt(formData.get('gradeLevel') as string);
+    const section = formData.get('section') as string;
+    const monthlyTuitionFee = Number(formData.get('monthlyTuitionFee'));
+
+    if (!name || isNaN(gradeLevel)) {
+        return { message: 'Name and Grade Level are required' };
+    }
+
+    try {
+        await db.class.create({
+            data: {
+                schoolId: session.schoolId,
+                name,
+                gradeLevel,
+                section,
+                monthlyTuitionFee: monthlyTuitionFee || 0,
+                // Generate a random hex color for the class
+                hexCode: '#' + Math.floor(Math.random() * 16777215).toString(16)
+            }
+        });
+
+        revalidatePath('/school/academics');
+        return { success: true, message: 'Class created successfully' };
+    } catch (error) {
+        console.error('Create Class Error:', error);
+        return { message: 'Failed to create class' };
+    }
+}
