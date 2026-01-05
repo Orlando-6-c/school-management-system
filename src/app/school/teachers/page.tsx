@@ -35,7 +35,7 @@ export default async function TeachersPage() {
                 </div>
             </div>
 
-            <div className="rounded-md border border-border">
+            <div className="rounded-md border border-border bg-card text-card-foreground">
                 <Table>
                     <TableCaption>A list of all registered teachers.</TableCaption>
                     <TableHeader>
