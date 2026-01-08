@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { createClass } from '@/actions/academics'; // Reusing action
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,14 @@ interface Teacher {
 }
 
 export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
+    const formRef = useRef<HTMLFormElement>(null);
     const [state, action, pending] = useActionState(createClass, undefined);
+
+    useEffect(() => {
+        if (state?.success) {
+            formRef.current?.reset();
+        }
+    }, [state]);
 
     // Simple inline form
     const inputClasses = "bg-white text-gray-900 border-gray-300 focus:ring-gray-400 focus:border-gray-400";
@@ -25,7 +32,7 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
                 <CardTitle>Add New Class</CardTitle>
             </CardHeader>
             <CardContent>
-                <form action={action} className="grid gap-4">
+                <form ref={formRef} action={action} className="grid gap-4">
                     {state?.message && (
                         <div className={`text-sm p-2 rounded ${state.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {state.message}

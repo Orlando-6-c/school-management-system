@@ -74,7 +74,7 @@ export async function createClass(prevState: any, formData: FormData) {
             }
         });
 
-        revalidatePath('/school/academics');
+        revalidatePath('/school/classes');
         return { success: true, message: 'Class created successfully' };
     } catch (error) {
         console.error('Create Class Error:', error);
