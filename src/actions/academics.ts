@@ -51,8 +51,9 @@ export async function createClass(prevState: any, formData: FormData) {
     const session = await getSession();
     if (!session.schoolId) return { message: 'Unauthorized' };
 
-    const name = formData.get('name') as string;
-    const gradeLevel = parseInt(formData.get('gradeLevel') as string);
+    const combinedName = formData.get('name') as string;
+    const [name, gradeLevelString] = combinedName.split('|');
+    const gradeLevel = parseInt(gradeLevelString);
     const section = formData.get('section') as string;
     const monthlyTuitionFee = Number(formData.get('monthlyTuitionFee'));
 

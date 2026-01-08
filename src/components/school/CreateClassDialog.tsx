@@ -67,19 +67,19 @@ export function CreateClassDialog({ teachers }: CreateClassDialogProps) {
                             required
                         >
                             <option value="">Select Grade Level</option>
-                            <option value="Play Group">Play Group</option>
-                            <option value="Nursery">Nursery</option>
-                            <option value="Prep">Prep</option>
-                            <option value="Grade 1">Grade 1</option>
-                            <option value="Grade 2">Grade 2</option>
-                            <option value="Grade 3">Grade 3</option>
-                            <option value="Grade 4">Grade 4</option>
-                            <option value="Grade 5">Grade 5</option>
-                            <option value="Grade 6">Grade 6</option>
-                            <option value="Grade 7">Grade 7</option>
-                            <option value="Grade 8">Grade 8</option>
-                            <option value="Grade 9">Grade 9</option>
-                            <option value="Grade 10">Grade 10</option>
+                            <option value="Play Group|0">Play Group</option>
+                            <option value="Nursery|1">Nursery</option>
+                            <option value="Prep|2">Prep</option>
+                            <option value="Grade 1|3">Grade 1</option>
+                            <option value="Grade 2|4">Grade 2</option>
+                            <option value="Grade 3|5">Grade 3</option>
+                            <option value="Grade 4|6">Grade 4</option>
+                            <option value="Grade 5|7">Grade 5</option>
+                            <option value="Grade 6|8">Grade 6</option>
+                            <option value="Grade 7|9">Grade 7</option>
+                            <option value="Grade 8|10">Grade 8</option>
+                            <option value="Grade 9|11">Grade 9</option>
+                            <option value="Grade 10|12">Grade 10</option>
                         </select>
                     </div>
 
