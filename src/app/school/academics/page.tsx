@@ -9,6 +9,7 @@ export default async function AcademicsPage() {
     const session = await getSession();
 
     // Fetch Classes with student counts and teacher assignments
+    // Added safe fetching: returns empty array if DB call fails (though db.class.findMany usually doesn't throw on empty)
     const classes = await db.class.findMany({
         where: { schoolId: session.schoolId! },
         include: {
@@ -25,11 +26,18 @@ export default async function AcademicsPage() {
     });
 
     // Fetch Teachers for the Create Dialog
-    const teachers = await db.teacher.findMany({
+    // Updated to select firstName/lastName instead of 'name' which doesn't exist
+    const rawTeachers = await db.teacher.findMany({
         where: { schoolId: session.schoolId! },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' }
+        select: { id: true, firstName: true, lastName: true },
+        orderBy: { firstName: 'asc' }
     });
+
+    // Transform for the dialog interface
+    const teachers = rawTeachers.map(t => ({
+        id: t.id,
+        name: `${t.firstName} ${t.lastName}`
+    }));
 
     return (
         <div className="space-y-6">
@@ -44,9 +52,11 @@ export default async function AcademicsPage() {
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {classes.length === 0 ? (
+                {/* Empty State Handling */}
+                {(!classes || classes.length === 0) ? (
                     <div className="col-span-full text-center py-12 text-gray-500 bg-white rounded-lg border border-dashed border-gray-300">
-                        No classes found. Create your first class to get started.
+                        <p className="mb-2">No classes found.</p>
+                        <p className="text-sm">Create your first class to get started.</p>
                     </div>
                 ) : (
                     classes.map((cls) => (
@@ -65,13 +75,14 @@ export default async function AcademicsPage() {
                                 <div className="space-y-4 mt-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Students</span>
-                                        <span className="font-medium text-gray-900">{cls._count.students}</span>
+                                        <span className="font-medium text-gray-900">{cls._count?.students ?? 0}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Class Teacher</span>
                                         <span className="font-medium text-gray-900 text-right truncate max-w-[150px]">
-                                            {cls.teacherAssignments.length > 0
-                                                ? cls.teacherAssignments[0].teacher.name
+                                            {/* Defensive check for teacher assignments and teacher object */}
+                                            {cls.teacherAssignments && cls.teacherAssignments.length > 0 && cls.teacherAssignments[0].teacher
+                                                ? `${cls.teacherAssignments[0].teacher.firstName} ${cls.teacherAssignments[0].teacher.lastName}`
                                                 : <span className="text-gray-400 italic">None</span>}
                                         </span>
                                     </div>
