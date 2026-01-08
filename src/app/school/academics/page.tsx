@@ -8,10 +8,33 @@ export const runtime = 'nodejs';
 export default async function AcademicsPage() {
     const session = await getSession();
 
+    // Guard clause for missing schoolId (e.g. Super Admin without selected school)
+    if (!session.schoolId) {
+        return (
+            <div className="p-6">
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div className="flex">
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-yellow-800">
+                                No School Selected
+                            </h3>
+                            <div className="mt-2 text-sm text-yellow-700">
+                                <p>
+                                    You are logged in as a user without a direct school association (e.g. Super Admin).
+                                    Please select a school to view academics.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // Fetch Classes with student counts and teacher assignments
     // Added safe fetching: returns empty array if DB call fails (though db.class.findMany usually doesn't throw on empty)
     const classes = await db.class.findMany({
-        where: { schoolId: session.schoolId! },
+        where: { schoolId: session.schoolId },
         include: {
             _count: {
                 select: { students: true }
@@ -28,7 +51,7 @@ export default async function AcademicsPage() {
     // Fetch Teachers for the Create Dialog
     // Updated to select firstName/lastName instead of 'name' which doesn't exist
     const rawTeachers = await db.teacher.findMany({
-        where: { schoolId: session.schoolId! },
+        where: { schoolId: session.schoolId },
         select: { id: true, firstName: true, lastName: true },
         orderBy: { firstName: 'asc' }
     });
