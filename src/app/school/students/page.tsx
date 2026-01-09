@@ -9,17 +9,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Plus, Search, Edit, Printer } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import PrintDirectoryButton from '@/components/school/PrintDirectoryButton';
+import { StudentTable } from '@/components/school/StudentTable'; // Import the new component
 
 export const runtime = 'nodejs';
 
@@ -28,7 +21,7 @@ export default async function StudentsPage() {
 
     // 1. Fetch Students
     const students = await db.student.findMany({
-        where: { schoolId: session.schoolId! },
+        where: { schoolId: session.schoolId!, isActive: true }, // Filter only active students
         include: {
             class: true,
             guardian: true,
@@ -76,100 +69,7 @@ export default async function StudentsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="print:p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[80px]">Photo</TableHead>
-                                <TableHead>Roll No</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Class</TableHead>
-                                <TableHead>Guardian</TableHead>
-                                <TableHead>Fee</TableHead>
-                                <TableHead className="text-right print:hidden">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {students.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24 text-gray-500">
-                                        No students found. Admit a student to get started.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                students.map((student: any) => (
-                                    <TableRow key={student.id}>
-                                        {/* Photo Column */}
-                                        <TableCell>
-                                            {student.photograph ? (
-                                                <img
-                                                    src={student.photograph}
-                                                    alt={student.name}
-                                                    className="h-10 w-10 rounded-full object-cover border border-gray-200"
-                                                />
-                                            ) : (
-                                                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 border border-gray-200">
-                                                    No Pic
-                                                </div>
-                                            )}
-                                        </TableCell>
-
-                                        <TableCell className="font-medium text-gray-900">
-                                            {student.rollNumber}
-                                        </TableCell>
-                                        <TableCell className="text-gray-700">
-                                            {student.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
-                                                {student.class?.name ?? 'Unassigned'} {student.class?.section ? `(${student.class.section})` : ''}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-gray-600">
-                                            {student.guardian?.name || 'N/A'}
-                                            <div className="text-xs text-gray-400">
-                                                {student.guardian?.contact || 'No Contact'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {Number(student.discountPercentage) > 0 ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs line-through text-gray-400">
-                                                        {Number(student.monthlyFees)}
-                                                    </span>
-                                                    <span className="font-bold text-gray-900">
-                                                        {Number(student.finalFee)}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="font-bold text-gray-900">
-                                                    {Number(student.monthlyFees)}
-                                                </span>
-                                            )}
-                                        </TableCell>
-
-                                        {/* Actions Column */}
-                                        <TableCell className="text-right print:hidden">
-                                            <div className="flex justify-end gap-2">
-                                                {/* Edit Button */}
-                                                <Button variant="ghost" size="icon" title="Edit Student" asChild>
-                                                    <Link href={`/school/students/${student.id}/edit`}>
-                                                        <Edit className="h-4 w-4 text-blue-600" />
-                                                    </Link>
-                                                </Button>
-
-                                                {/* Individual Print Button */}
-                                                <Button variant="ghost" size="icon" title="Print Student Info" asChild>
-                                                    <Link href={`/school/students/${student.id}/print`} target="_blank">
-                                                        <Printer className="h-4 w-4 text-gray-600" />
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                    <StudentTable students={students} session={session} classes={classes} />
                 </CardContent>
             </Card>
         </div>

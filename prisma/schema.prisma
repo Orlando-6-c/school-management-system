@@ -37,6 +37,7 @@ enum UserRole {
   SuperAdmin
   SchoolAdmin
   Finance
+  Teacher
   ReadOnly
 }
 
@@ -90,16 +91,21 @@ model School {
   superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
   // School has many...
-  users      User[]
-  classes    Class[]
-  guardians  Guardian[]
-  students   Student[]
-  teachers   Teacher[]
-  staff      Staff[]
-  executives Executive[]
-  incomes    Income[]
-  expenses   Expense[]
-  events     Event[]
+  users                  User[]
+  classes                Class[]
+  guardians              Guardian[]
+  students               Student[]
+  teachers               Teacher[]
+  staff                  Staff[]
+  executives             Executive[]
+  incomeRecords          IncomeRecord[]
+  expenseRecords         ExpenseRecord[]
+  events                 Event[]
+  auditLogs              AuditLog[]
+  financialYears         FinancialYear[]
+  currencyConfigurations CurrencyConfiguration[]
+  additionalCharges      AdditionalCharge[]
+  salaryStructures       SalaryStructure[]
 
   @@index([superAdminId])
 }
@@ -128,24 +134,25 @@ model User {
 
 /// Class/Grade - Playgroup to Grade 9 (SRS 3.2.1)
 model Class {
-  id          String   @id @default(cuid())
-  name        String // e.g., "Playgroup", "Grade 1", etc.
-  gradeLevel  Int // Numeric level for sorting (0 = Playgroup, 1-9 for grades)
-  hexCode     String // Hexadecimal code for roll number generation
-  section     String?
-  monthlyTuitionFee   Decimal  @db.Decimal(10, 2) // Renamed from annualFee
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String // e.g., "Playgroup", "Grade 1", etc.
+  gradeLevel        Int // Numeric level for sorting (0 = Playgroup, 1-9 for grades)
+  hexCode           String // Hexadecimal code for roll number generation
+  section           String?
+  monthlyTuitionFee Decimal  @db.Decimal(10, 2) // Renamed from annualFee
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // School isolation
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   // Class has many students
-  students          Student[]
+  students           Student[]
   teacherAssignments TeacherClassAssignment[]
-  attendances       Attendance[]
+  attendances        Attendance[]
+  additionalCharges  AdditionalCharge[]
 
   @@unique([name, section, schoolId])
   @@index([schoolId])
@@ -183,7 +190,7 @@ model Guardian {
 
 /// Student - Core student entity (SRS 3.2.1)
 model Student {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   name               String
   rollNumber         String // Format: YY + Sequence + Grade(Hex) - SRS 3.2.2
   dateOfBirth        DateTime
@@ -191,13 +198,13 @@ model Student {
   bFormNumber        String // B-Form (Pakistan child registration)
   gender             Gender
   photograph         String? // URL/path to photo
-  monthlyFees        Decimal  @db.Decimal(10, 2) // Renamed from annualFee
-  discountPercentage Decimal  @default(0) @db.Decimal(5, 2)
-  finalFee           Decimal  @db.Decimal(10, 2) // Auto-calculated
-  isActive           Boolean  @default(true) // Soft deletion - SRS 3.2.7
+  monthlyFees        Decimal   @db.Decimal(10, 2) // Renamed from annualFee
+  discountPercentage Decimal   @default(0) @db.Decimal(5, 2)
+  finalFee           Decimal   @db.Decimal(10, 2) // Auto-calculated
+  isActive           Boolean   @default(true) // Soft deletion - SRS 3.2.7
   deletedAt          DateTime? // Soft delete timestamp
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // School isolation
   schoolId String
@@ -210,8 +217,10 @@ model Student {
   guardian   Guardian @relation(fields: [guardianId], references: [id])
 
   // Student has many...
-  feeChallans FeeChallan[]
-  attendances Attendance[]
+  feeChallans       FeeChallan[]
+  attendances       Attendance[]
+  incomeRecords     IncomeRecord[]
+  additionalCharges AdditionalCharge[]
 
   @@unique([rollNumber, schoolId])
   @@index([schoolId])
@@ -252,31 +261,36 @@ model Attendance {
 
 /// Teacher - Academic Staff (SRS 3.3)
 model Teacher {
-  id             String   @id @default(uuid())
-  firstName      String
-  lastName       String
-  email          String?
-  phone          String
-  gender         String
-  cnic           String
-  qualification  String
-  subject        String
-  experience     String?
-  joiningDate    DateTime @default(now())
-  salary         Float    @default(0)
-  address        String?
-  photograph     String?
-  schoolId       String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  school         School   @relation(fields: [schoolId], references: [id])
+  id            String    @id @default(uuid())
+  firstName     String
+  lastName      String
+  email         String
+  phone         String
+  gender        String
+  cnic          String
+  qualification String
+  subject       String
+  experience    String?
+  joiningDate   DateTime  @default(now())
+  address       String?
+  photograph    String?
+  isActive      Boolean   @default(true)
+  deletedAt     DateTime?
+  schoolId      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  school            School           @relation(fields: [schoolId], references: [id])
+  salaryStructureId String?
+  salaryStructure   SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
 
   // Teacher assignments to classes
   classAssignments TeacherClassAssignment[]
   salarySlips      SalarySlip[]
-  
+
+  @@unique([email, schoolId])
   @@index([schoolId])
+  @@index([salaryStructureId])
 }
 
 /// TeacherClassAssignment - Many-to-many between Teacher and Class
@@ -303,7 +317,6 @@ model Staff {
   cnic         String
   contact      String
   gender       Gender
-  salary       Decimal  @db.Decimal(10, 2)
   role         String // Specific role within staff category
   workingHours String // e.g., "8 AM - 4 PM"
   photograph   String?
@@ -312,12 +325,15 @@ model Staff {
   updatedAt    DateTime @updatedAt
 
   // School isolation
-  schoolId    String
-  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  salarySlips SalarySlip[]
+  schoolId          String
+  school            School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  salaryStructureId String?
+  salaryStructure   SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
+  salarySlips       SalarySlip[]
 
   @@unique([cnic, schoolId])
   @@index([schoolId])
+  @@index([salaryStructureId])
 }
 
 /// Executive - Management/Owners (SRS 3.3.3)
@@ -330,7 +346,6 @@ model Executive {
   cnic                String
   contact             String
   gender              Gender
-  salary              Decimal  @db.Decimal(10, 2)
   designation         String
   ownershipPercentage Decimal  @db.Decimal(5, 2)
   photograph          String?
@@ -339,12 +354,15 @@ model Executive {
   updatedAt           DateTime @updatedAt
 
   // School isolation
-  schoolId    String
-  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  salarySlips SalarySlip[]
+  schoolId          String
+  school            School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  salaryStructureId String?
+  salaryStructure   SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
+  salarySlips       SalarySlip[]
 
   @@unique([cnic, schoolId])
   @@index([schoolId])
+  @@index([salaryStructureId])
 }
 
 // ============================================================================
@@ -353,21 +371,23 @@ model Executive {
 
 /// FeeChallan - Fee payment slips (SRS 3.4.3)
 model FeeChallan {
-  id             String    @id @default(cuid())
-  challanNumber  String
-  month          String // e.g., "January 2026"
-  year           Int
-  dueDate        DateTime
-  amount         Decimal   @db.Decimal(10, 2)
-  discount       Decimal   @default(0) @db.Decimal(10, 2)
-  additionalCharges Decimal @default(0) @db.Decimal(10, 2) // SRS 3.4.4
-  totalAmount    Decimal   @db.Decimal(10, 2)
-  paidAmount     Decimal   @default(0) @db.Decimal(10, 2)
-  status         FeeStatus @default(Pending)
-  paidAt         DateTime?
-  remarks        String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  challanNumber String
+  month         String // e.g., "January 2026"
+  year          Int
+  issueDate     DateTime  @default(now()) // New
+  dueDate       DateTime
+  amount        Decimal   @db.Decimal(10, 2)
+  discount      Decimal   @default(0) @db.Decimal(10, 2)
+  lateFeeAmount Decimal   @default(0) @db.Decimal(10, 2) // New
+  totalAmount   Decimal   @db.Decimal(10, 2)
+  paidAmount    Decimal   @default(0) @db.Decimal(10, 2)
+  status        FeeStatus @default(Pending)
+  isGenerated   Boolean   @default(false) // New
+  paidAt        DateTime?
+  remarks       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // School isolation
   schoolId String
@@ -377,11 +397,12 @@ model FeeChallan {
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   // Fee breakdown items
-  feeBreakdown FeeBreakdownItem[]
+  feeBreakdown      FeeBreakdownItem[]
+  additionalCharges AdditionalChargeItem[] // New relation
 
   // Link to income when paid
-  incomeId String?
-  income   Income? @relation(fields: [incomeId], references: [id])
+  incomeRecordId String?
+  incomeRecord   IncomeRecord? @relation(fields: [incomeRecordId], references: [id])
 
   @@unique([challanNumber, schoolId])
   @@index([schoolId])
@@ -402,43 +423,50 @@ model FeeBreakdownItem {
   @@index([feeChallanId])
 }
 
-/// Income - Income records (SRS 3.4.1)
-model Income {
-  id          String         @id @default(cuid())
-  description String
-  amount      Decimal        @db.Decimal(10, 2)
-  category    IncomeCategory
-  date        DateTime
-  reference   String? // Reference number
-  remarks     String?
-  isAutomatic Boolean        @default(false) // Auto-generated from fee payment
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+/// IncomeRecord - Income records (SRS 3.4.1)
+model IncomeRecord {
+  id            String         @id @default(cuid())
+  transactionId String         @unique @default(cuid())
+  date          DateTime
+  category      IncomeCategory
+  source        String // e.g., "Student Fee", "Donation"
+  studentId     String? // optional reference to Student
+  amount        Decimal        @db.Decimal(10, 2)
+  paymentMethod String // e.g., "Cash", "Bank Transfer"
+  status        String         @default("Paid") // "Paid" or "Pending"
+  description   String?
+  isAutomatic   Boolean        @default(false) // Auto-generated from fee payment
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   // School isolation
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  // Linked fee challans (when income is from fees)
+  // Relations
+  student     Student?     @relation(fields: [studentId], references: [id])
   feeChallans FeeChallan[]
 
+  @@unique([schoolId, transactionId])
   @@index([schoolId])
   @@index([category])
   @@index([date])
+  @@index([studentId])
 }
 
-/// Expense - Expense records (SRS 3.4.2)
-model Expense {
-  id          String          @id @default(cuid())
-  description String
-  amount      Decimal         @db.Decimal(10, 2)
-  category    ExpenseCategory
-  date        DateTime
-  reference   String?
-  remarks     String?
-  isAutomatic Boolean         @default(false) // Auto-generated from salary payment
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+/// ExpenseRecord - Expense records (SRS 3.4.2)
+model ExpenseRecord {
+  id            String          @id @default(cuid())
+  transactionId String          @unique @default(cuid())
+  date          DateTime
+  category      ExpenseCategory
+  description   String
+  amount        Decimal         @db.Decimal(10, 2)
+  paidTo        String // Name of the recipient
+  paymentMethod String // e.g., "Cash", "Bank Transfer"
+  isAutomatic   Boolean         @default(false) // Auto-generated from salary payment
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   // School isolation
   schoolId String
@@ -447,6 +475,7 @@ model Expense {
   // Linked salary slips (when expense is salary)
   salarySlips SalarySlip[]
 
+  @@unique([schoolId, transactionId])
   @@index([schoolId])
   @@index([category])
   @@index([date])
@@ -454,18 +483,19 @@ model Expense {
 
 /// SalarySlip - Salary payment records (SRS 3.4.5)
 model SalarySlip {
-  id            String   @id @default(cuid())
-  slipNumber    String
-  month         String // e.g., "January 2026"
-  year          Int
-  baseSalary    Decimal  @db.Decimal(10, 2)
-  deductions    Decimal  @default(0) @db.Decimal(10, 2)
-  bonuses       Decimal  @default(0) @db.Decimal(10, 2)
-  netSalary     Decimal  @db.Decimal(10, 2)
-  paidAt        DateTime
-  remarks       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String   @id @default(cuid())
+  slipNumber String
+  month      String // e.g., "January 2026"
+  year       Int
+  baseSalary Decimal  @db.Decimal(10, 2)
+  allowances Decimal  @default(0) @db.Decimal(10, 2)
+  deductions Decimal  @default(0) @db.Decimal(10, 2)
+  bonuses    Decimal  @default(0) @db.Decimal(10, 2)
+  netSalary  Decimal  @db.Decimal(10, 2)
+  paidAt     DateTime
+  remarks    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // School isolation
   schoolId String
@@ -473,22 +503,22 @@ model SalarySlip {
   // Employee type (polymorphic relation)
   employeeType EmployeeRole
   teacherId    String?
-  teacher      Teacher?   @relation(fields: [teacherId], references: [id])
+  teacher      Teacher?     @relation(fields: [teacherId], references: [id])
   staffId      String?
-  staff        Staff?     @relation(fields: [staffId], references: [id])
+  staff        Staff?       @relation(fields: [staffId], references: [id])
   executiveId  String?
-  executive    Executive? @relation(fields: [executiveId], references: [id])
+  executive    Executive?   @relation(fields: [executiveId], references: [id])
 
   // Linked expense
-  expenseId String?
-  expense   Expense? @relation(fields: [expenseId], references: [id])
+  expenseRecordId String?
+  expenseRecord   ExpenseRecord? @relation(fields: [expenseRecordId], references: [id])
 
   @@unique([slipNumber, schoolId])
   @@index([schoolId])
   @@index([teacherId])
   @@index([staffId])
   @@index([executiveId])
-  @@index([expenseId])
+  @@index([expenseRecordId])
 }
 
 // ============================================================================
@@ -516,4 +546,132 @@ model Event {
   @@index([endDate])
 }
 
+// ============================================================================
+// AUDITING
+// ============================================================================
 
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String // e.g., "soft_delete_student"
+  targetId   String
+  targetType String
+  reason     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // School isolation
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // User who performed the action
+  // Note: We can't have a direct relation to multiple user types (SuperAdmin, User)
+  // So we store the ID and type.
+  actorId   String
+  actorType String // e.g., "User", "SuperAdmin"
+
+  @@index([schoolId])
+  @@index([actorId])
+  @@index([targetId])
+}
+
+// ============================================================================
+// FINANCE CONFIGURATION
+// ============================================================================
+
+model FinancialYear {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  year      Int      @unique // e.g., 2023 for 2023-2024
+  startDate DateTime
+  endDate   DateTime
+  isCurrent Boolean  @default(false) // Only one financial year can be current per school
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, year])
+  @@index([schoolId])
+}
+
+model CurrencyConfiguration {
+  id             String   @id @default(cuid())
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  currencyCode   String   @default("PKR") // e.g., USD, PKR
+  currencySymbol String   @default("Rs") // e.g., $, Rs
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([schoolId]) // Only one currency config per school
+  @@index([schoolId])
+}
+
+enum ChargeType {
+  OneTime
+  Recurring
+}
+
+model AdditionalCharge {
+  id               String         @id @default(cuid())
+  schoolId         String
+  school           School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name             String
+  type             ChargeType
+  amount           Decimal        @db.Decimal(10, 2)
+  applicableMonths String[] // e.g., ["January", "February"]
+  incomeCategory   IncomeCategory // Links to an existing IncomeCategory enum
+
+  // Who the charge is applied to
+  studentId String?
+  student   Student? @relation(fields: [studentId], references: [id])
+  classId   String?
+  class     Class?   @relation(fields: [classId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Link to FeeChallan through AdditionalChargeItem
+  feeChallanItems AdditionalChargeItem[]
+
+  @@index([schoolId])
+  @@index([studentId])
+  @@index([classId])
+}
+
+model AdditionalChargeItem {
+  id                 String           @id @default(cuid())
+  feeChallanId       String
+  feeChallan         FeeChallan       @relation(fields: [feeChallanId], references: [id], onDelete: Cascade)
+  additionalChargeId String
+  additionalCharge   AdditionalCharge @relation(fields: [additionalChargeId], references: [id], onDelete: Cascade)
+  amountApplied      Decimal          @db.Decimal(10, 2) // Amount applied for this specific challan
+  createdAt          DateTime         @default(now())
+
+  @@unique([feeChallanId, additionalChargeId])
+  @@index([feeChallanId])
+  @@index([additionalChargeId])
+}
+
+// ============================================================================
+// SALARY MANAGEMENT
+// ============================================================================
+
+model SalaryStructure {
+  id         String   @id @default(cuid())
+  schoolId   String
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name       String // e.g., "Primary Teacher Scale", "Admin Staff Basic"
+  baseSalary Decimal  @db.Decimal(10, 2)
+  allowances Decimal  @default(0) @db.Decimal(10, 2)
+  deductions Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Employees linked to this structure
+  teachers   Teacher[]
+  staff      Staff[]
+  executives Executive[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+}

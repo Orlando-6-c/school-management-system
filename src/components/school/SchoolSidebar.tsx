@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '@/actions/auth';
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, GraduationCap, School } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, GraduationCap, School, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +26,7 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
         { href: '/school/students', label: 'Students', icon: GraduationCap },
         { href: '/school/teachers', label: 'Teachers', icon: Users },
         { href: '/school/academics', label: 'Academics', icon: BookOpen },
+        { href: '/school/finance', label: 'Finance', icon: DollarSign, roles: ['SchoolAdmin', 'Finance'] }, // New Finance link
         { href: '/school/settings', label: 'Settings', icon: Settings },
     ];
 
@@ -50,9 +51,10 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
                     Menu
                 </p>
                 {links.map((link) => {
-                    const active = link.href === '/school'
-                        ? pathname === '/school'
-                        : pathname?.startsWith(link.href);
+                    // Check if link has roles defined and if current user has one of them
+                    if (link.roles && !link.roles.includes(userRole)) {
+                        return null;
+                    }
 
                     return (
                         <Link

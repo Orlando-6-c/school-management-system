@@ -280,3 +280,81 @@ export async function updateStudent(id: string, prevState: AdmissionState | unde
         return { message: 'Failed to update student' };
     }
 }
+
+export async function deleteStudent(studentId: string, reason?: string) {
+    const session = await getSession();
+    if (session.role !== 'SchoolAdmin' || !session.schoolId) {
+        return { success: false, message: 'Unauthorized' };
+    }
+
+    try {
+        await db.$transaction(async (tx) => {
+            const student = await tx.student.update({
+                where: { id: studentId, schoolId: session.schoolId },
+                data: {
+                    isActive: false,
+                    deletedAt: new Date(),
+                },
+            });
+
+            if (!student) {
+                throw new Error('Student not found or not part of this school.');
+            }
+
+            // Also deactivate the corresponding user account
+            await tx.user.updateMany({
+                where: {
+                    username: student.rollNumber,
+                    schoolId: session.schoolId,
+                },
+                data: {
+                    isActive: false,
+                },
+            });
+
+            // Create audit log entry
+            await tx.auditLog.create({
+                data: {
+                    schoolId: session.schoolId,
+                    actorId: session.userId,
+                    actorType: 'User', // Assuming admin is a 'User'
+                    action: 'soft_delete_student',
+                    targetId: student.id,
+                    targetType: 'Student',
+                    reason: reason,
+                },
+            });
+        });
+
+        revalidatePath('/school/students');
+        return { success: true, message: 'Student deleted successfully.' };
+    } catch (error: any) {
+    }
+
+export async function getStudents(schoolId: string) {
+    try {
+        const students = await db.student.findMany({
+            where: { schoolId: schoolId, isActive: true },
+            include: {
+                class: {
+                    select: {
+                        id: true,
+                        name: true,
+                        section: true,
+                    },
+                },
+                guardian: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+            orderBy: { name: 'asc' },
+        });
+        return students;
+    } catch (error) {
+        console.error('Error fetching students:', error);
+        return [];
+    }
+}

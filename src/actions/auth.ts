@@ -77,6 +77,9 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
         }
 
         const user = users[0];
+        if (!user.isActive) {
+            return { message: 'Your account has been disabled.' };
+        }
         if (await verifyPassword(password, user.password)) {
             session.userId = user.id;
             session.username = user.username;
@@ -106,7 +109,7 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
             },
         });
 
-        if (user && (await verifyPassword(password, user.password))) {
+        if (user && user.isActive && (await verifyPassword(password, user.password))) {
             session.userId = user.id;
             session.username = user.username;
             session.role = user.role;
