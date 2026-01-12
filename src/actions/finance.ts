@@ -777,10 +777,6 @@ export async function getSalaryStructures() {
     }
 }
 
-        return [];
-    }
-}
-
 export async function getSalaryStructureById(id: string) {
     const session = await getSession();
     if (!session.schoolId || session.role !== 'SchoolAdmin') {

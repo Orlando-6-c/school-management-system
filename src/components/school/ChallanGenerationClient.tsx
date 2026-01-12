@@ -8,8 +8,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChallanStudentTable } from '@/components/school/ChallanStudentTable';
 import { generateChallansByFilter } from '@/actions/finance';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import ChallanPdfDocument from './ChallanPdfDocument'; // Correct import path
+import { PDFDownloadLink as ClientPDFDownloadLink } from '@react-pdf/renderer';
+import dynamic from 'next/dynamic';
+
+const PDFDownloadLink = dynamic(
+    () => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink),
+    { ssr: false }
+);
+
+const ChallanPdfDocument = dynamic(
+    () => import('./ChallanPdfDocument'),
+    { ssr: false }
+);
+
 import { format } from 'date-fns';
 
 // Define types for our data

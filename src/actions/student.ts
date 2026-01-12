@@ -329,7 +329,9 @@ export async function deleteStudent(studentId: string, reason?: string) {
         revalidatePath('/school/students');
         return { success: true, message: 'Student deleted successfully.' };
     } catch (error: any) {
+        return { success: false, message: 'Failed to delete student.' };
     }
+}
 
 export async function getStudents(schoolId: string) {
     try {
