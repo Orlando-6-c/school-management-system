@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChallanStudentTable } from '@/components/school/ChallanStudentTable';
 import { generateChallansByFilter } from '@/actions/finance';
-import { PDFDownloadLink as ClientPDFDownloadLink } from '@react-pdf/renderer';
 import dynamic from 'next/dynamic';
 
 const PDFDownloadLink = dynamic(
