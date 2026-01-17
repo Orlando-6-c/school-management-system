@@ -57,7 +57,7 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
         const newTeacher = await db.$transaction(async (tx) => {
             const teacher = await tx.teacher.create({
                 data: {
-                    schoolId: session.schoolId,
+                    schoolId: session.schoolId!,
                     ...data,
                     // Ensure explicit nulls for optional fields if they are missing in data object
                     address: data.address || null,
@@ -71,7 +71,7 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
 
             await tx.user.create({
                 data: {
-                    schoolId: session.schoolId,
+                    schoolId: session.schoolId!,
                     username: teacher.email, // Using teacher's email as username
                     password: hashedPassword,
                     role: 'Teacher', // Assign 'Teacher' role
@@ -121,7 +121,7 @@ export async function updateTeacher(id: string, prevState: TeacherState | undefi
             where: { id, schoolId: session.schoolId },
             data: {
                 ...data,
-                email: data.email || null,
+                email: data.email || undefined,
                 address: data.address || null,
                 experience: data.experience || null,
                 photograph: data.photograph || null,
@@ -146,7 +146,7 @@ export async function deleteTeacher(teacherId: string, reason?: string) {
     try {
         await db.$transaction(async (tx) => {
             const teacher = await tx.teacher.update({
-                where: { id: teacherId, schoolId: session.schoolId },
+                where: { id: teacherId, schoolId: session.schoolId! },
                 data: {
                     isActive: false,
                     deletedAt: new Date(),
@@ -161,7 +161,7 @@ export async function deleteTeacher(teacherId: string, reason?: string) {
             await tx.user.updateMany({
                 where: {
                     username: teacher.email, // Using teacher's email as username
-                    schoolId: session.schoolId,
+                    schoolId: session.schoolId!,
                 },
                 data: {
                     isActive: false,
@@ -171,7 +171,7 @@ export async function deleteTeacher(teacherId: string, reason?: string) {
             // Create audit log entry
             await tx.auditLog.create({
                 data: {
-                    schoolId: session.schoolId,
+                    schoolId: session.schoolId!,
                     actorId: session.userId,
                     actorType: 'User', // Assuming admin is a 'User'
                     action: 'soft_delete_teacher',

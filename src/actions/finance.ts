@@ -241,8 +241,9 @@ export async function calculateStudentFeeBreakdown(
 
     // Discount
     const discountPercentage = Number(student.discountPercentage);
+    let discountAmount = 0;
     if (discountPercentage > 0) {
-        const discountAmount = baseMonthlyFee * (discountPercentage / 100);
+        discountAmount = baseMonthlyFee * (discountPercentage / 100);
         feeBreakdown.push({ description: `Discount (${discountPercentage}%)`, amount: -discountAmount });
         totalAmount -= discountAmount;
     }
