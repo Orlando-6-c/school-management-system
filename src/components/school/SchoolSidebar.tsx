@@ -62,7 +62,7 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
                             href={link.href}
                             className={cn(
                                 "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-medium text-sm",
-                                active
+                                isActive(link.href)
                                     ? "bg-indigo-600 text-white shadow-sm"
                                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                             )}
