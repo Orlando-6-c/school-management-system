@@ -15,7 +15,7 @@ export default async function DashboardPage() {
         redirect('/admin');
     }
 
-    if (session.role === 'SchoolAdmin') {
+    if (session.role === 'SchoolAdmin' || session.role === 'Finance') {
         redirect('/school');
     }
 

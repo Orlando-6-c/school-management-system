@@ -72,6 +72,16 @@ export async function createSchool(prevState: CreateSchoolState | undefined, for
                     schoolId: school.id,
                 },
             });
+
+            // Automate Clerk Creation
+            await tx.user.create({
+                data: {
+                    username: `${adminUsername}_finance`,
+                    password: hashedPassword, // Same initial password
+                    role: 'Finance',
+                    schoolId: school.id,
+                },
+            });
         });
 
         revalidatePath('/admin/schools');
