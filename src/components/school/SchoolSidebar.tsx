@@ -32,11 +32,24 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
 
     // Filter links based on role
     // If role is Finance, ONLY show Finance
+    // Filter links based on role
     const visibleLinks = links.filter(link => {
+        // If role is Finance (Clerk), they see everything EXCEPT Finance
         if (userRole === 'Finance') {
-            return link.label === 'Finance';
+            return link.label !== 'Finance';
         }
-        // Admin sees everything
+
+        // SchoolAdmin sees everything
+        if (userRole === 'SchoolAdmin') {
+            return true;
+        }
+
+        // Other roles might have different rules, but for now allow strict checks
+        // For safety, fallback to checking link.roles if present
+        if (link.roles && !link.roles.includes(userRole)) {
+            return false;
+        }
+
         return true;
     });
 
