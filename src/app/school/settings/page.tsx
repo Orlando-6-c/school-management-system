@@ -1,0 +1,38 @@
+import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import { getSchoolSettings } from '@/actions/settings';
+import SettingsForm from '@/components/school/SettingsForm';
+
+export const runtime = 'nodejs';
+
+export default async function SettingsPage() {
+    const session = await getSession();
+
+    if (!session.schoolId || (session.role !== 'SchoolAdmin' && !session.isSuperAdmin)) {
+        redirect('/school');
+    }
+
+    const settings = await getSchoolSettings();
+
+    if (!settings) {
+        return (
+            <div className="space-y-6">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Settings</h1>
+                <div className="bg-red-50 text-red-700 p-4 rounded-lg">
+                    Failed to load settings. Please try again.
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">School Settings</h1>
+                <p className="text-gray-600 mt-2">Manage your school configuration and preferences.</p>
+            </div>
+
+            <SettingsForm initialSettings={settings} />
+        </div>
+    );
+}

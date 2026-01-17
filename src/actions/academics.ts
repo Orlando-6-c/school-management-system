@@ -41,9 +41,12 @@ export async function promoteStudents(prevState: any, formData: FormData) {
             success: true,
             message: `Successfully promoted ${result.count} students.`
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Promotion error:', error);
-        return { message: 'Failed to promote students.' };
+        if (error.code === 'P2002') {
+            return { message: 'A record with this value already exists.' };
+        }
+        return { success: false, message: 'Failed to promote students. Please try again.' };
     }
 }
 
@@ -76,8 +79,11 @@ export async function createClass(prevState: any, formData: FormData) {
 
         revalidatePath('/school/classes');
         return { success: true, message: 'Class created successfully' };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Create Class Error:', error);
-        return { message: 'Failed to create class' };
+        if (error.code === 'P2002') {
+            return { message: 'A class with this name and section already exists in this school.' };
+        }
+        return { success: false, message: 'Failed to create class. Please try again.' };
     }
 }

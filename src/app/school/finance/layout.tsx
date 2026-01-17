@@ -9,7 +9,7 @@ export default async function FinanceLayout({
     const session = await getSession();
 
     // Check if user is authorized to access finance module
-    if (!session.isLoggedIn || !session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.isLoggedIn || !session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)) {
         redirect('/login'); // Redirect unauthorized users
     }
 

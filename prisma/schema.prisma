@@ -200,7 +200,7 @@ model Student {
   photograph         String? // URL/path to photo
   monthlyFees        Decimal   @db.Decimal(10, 2) // Renamed from annualFee
   discountPercentage Decimal   @default(0) @db.Decimal(5, 2)
-  finalFee           Decimal   @db.Decimal(10, 2) // Auto-calculated
+  finalFee           Decimal   @db.Decimal(10, 2) // Auto-calculated: monthlyFees * (1 - discountPercentage/100). Stored for performance.
   isActive           Boolean   @default(true) // Soft deletion - SRS 3.2.7
   deletedAt          DateTime? // Soft delete timestamp
   createdAt          DateTime  @default(now())
@@ -279,6 +279,7 @@ model Teacher {
   schoolId      String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  salary        Decimal?  @db.Decimal(10, 2) // Monthly salary amount
 
   school            School           @relation(fields: [schoolId], references: [id])
   salaryStructureId String?
@@ -377,10 +378,10 @@ model FeeChallan {
   year          Int
   issueDate     DateTime  @default(now()) // New
   dueDate       DateTime
-  amount        Decimal   @db.Decimal(10, 2)
+  amount        Decimal   @db.Decimal(10, 2) // Base monthly fee (before discount, excluding additional charges). Stored for performance.
   discount      Decimal   @default(0) @db.Decimal(10, 2)
   lateFeeAmount Decimal   @default(0) @db.Decimal(10, 2) // New
-  totalAmount   Decimal   @db.Decimal(10, 2)
+  totalAmount   Decimal   @db.Decimal(10, 2) // Calculated: sum of feeBreakdown items + additionalCharges - discount + lateFeeAmount. Stored for performance.
   paidAmount    Decimal   @default(0) @db.Decimal(10, 2)
   status        FeeStatus @default(Pending)
   isGenerated   Boolean   @default(false) // New
@@ -586,14 +587,14 @@ model FinancialYear {
   id        String   @id @default(cuid())
   schoolId  String
   school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  year      Int      @unique // e.g., 2023 for 2023-2024
+  year      Int      // e.g., 2023 for 2023-2024. NOTE: Field-level @unique removed - year should be unique per school, not globally.
   startDate DateTime
   endDate   DateTime
   isCurrent Boolean  @default(false) // Only one financial year can be current per school
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([schoolId, year])
+  @@unique([schoolId, year]) // Year is unique per school (correct constraint)
   @@index([schoolId])
 }
 

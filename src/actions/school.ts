@@ -76,59 +76,72 @@ export async function createSchool(prevState: CreateSchoolState | undefined, for
 
         revalidatePath('/admin/schools');
         return { message: 'School created successfully' };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to create school:', error);
-        return { message: 'Failed to create school' };
+        if (error.code === 'P2002') {
+            return { message: 'A school with this slug or admin username already exists.' };
+        }
+        return { message: 'Failed to create school. Please try again.' };
     }
 }
 
 export async function impersonateSchoolAdmin(schoolId: string) {
-    const session = await getSession();
-    if (!session.isSuperAdmin) {
-        throw new Error('Unauthorized');
-    }
+    try {
+        const session = await getSession();
+        if (!session.isSuperAdmin) {
+            redirect('/admin');
+        }
 
-    const school = await db.school.findUnique({
-        where: { id: schoolId },
-        include: {
-            users: {
-                where: { role: 'SchoolAdmin' },
-                take: 1, // Take the first admin found
+        const school = await db.school.findUnique({
+            where: { id: schoolId },
+            include: {
+                users: {
+                    where: { role: 'SchoolAdmin' },
+                    take: 1, // Take the first admin found
+                },
             },
-        },
-    });
+        });
 
-    if (!school || school.users.length === 0) {
-        throw new Error('School or Admin not found');
+        if (!school || school.users.length === 0) {
+            redirect('/admin/schools');
+        }
+
+        const admin = school.users[0];
+
+        session.userId = admin.id;
+        session.username = admin.username;
+        session.role = admin.role;
+        session.schoolId = school.id;
+        session.schoolSlug = school.slug;
+        session.isSuperAdmin = true; // Keep super admin flag to allow switching back potentially, or just treat as impersonation
+        // For now, let's treat them as regular user but maybe add a flag if needed.
+        // The requirement says "Login as Admin".
+
+        await session.save();
+        redirect('/dashboard');
+    } catch (error: any) {
+        console.error('Impersonate School Admin Error:', error);
+        redirect('/admin/schools');
     }
-
-    const admin = school.users[0];
-
-    session.userId = admin.id;
-    session.username = admin.username;
-    session.role = admin.role;
-    session.schoolId = school.id;
-    session.schoolSlug = school.slug;
-    session.isSuperAdmin = true; // Keep super admin flag to allow switching back potentially, or just treat as impersonation
-    // For now, let's treat them as regular user but maybe add a flag if needed.
-    // The requirement says "Login as Admin".
-
-    await session.save();
-    redirect('/dashboard');
 }
 
 export async function getSchools() {
-    const session = await getSession();
-    if (!session.isSuperAdmin) {
+    try {
+        const session = await getSession();
+        if (!session.isSuperAdmin) {
+            return [];
+        }
+
+        return await db.school.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                _count: {
+                    select: { students: true },
+                },
+            },
+        });
+    } catch (error: any) {
+        console.error('Get Schools Error:', error);
         return [];
     }
-
-    return db.school.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: {
-            _count: {
-                select: { students: true },
-            },
-        },
-    });
 }

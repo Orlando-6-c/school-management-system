@@ -79,8 +79,11 @@ export function TeacherTable({ teachers, session }: TeacherTableProps) {
                 <TableBody>
                     {teachers.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                                No teachers found. Add your first teacher to get started.
+                            <TableCell colSpan={7} className="text-center py-12">
+                                <div className="flex flex-col items-center gap-3">
+                                    <p className="text-gray-500 text-sm font-medium">No teachers found.</p>
+                                    <p className="text-gray-400 text-xs">Add your first teacher to get started.</p>
+                                </div>
                             </TableCell>
                         </TableRow>
                     ) : (
@@ -109,7 +112,13 @@ export function TeacherTable({ teachers, session }: TeacherTableProps) {
                                 <TableCell>{teacher.subject}</TableCell>
                                 <TableCell>{teacher.qualification}</TableCell>
                                 <TableCell>{teacher.phone}</TableCell>
-                                <TableCell>{teacher.salary.toLocaleString()}</TableCell>
+                                <TableCell>
+                                    {teacher.salary 
+                                        ? typeof teacher.salary === 'number' 
+                                            ? teacher.salary.toLocaleString() 
+                                            : Number(teacher.salary).toLocaleString()
+                                        : 'N/A'}
+                                </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
                                         <Link href={`/school/teachers/${teacher.id}/edit`}>

@@ -5,6 +5,7 @@ import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { hashPassword } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 const teacherSchema = z.object({
     firstName: z.string().min(1, "First name is required"),
@@ -59,6 +60,8 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
                 data: {
                     schoolId: session.schoolId!,
                     ...data,
+                    // Convert salary to Prisma Decimal if provided
+                    salary: data.salary !== undefined ? new Prisma.Decimal(data.salary) : null,
                     // Ensure explicit nulls for optional fields if they are missing in data object
                     address: data.address || null,
                     experience: data.experience || null,
@@ -121,6 +124,8 @@ export async function updateTeacher(id: string, prevState: TeacherState | undefi
             where: { id, schoolId: session.schoolId },
             data: {
                 ...data,
+                // Convert salary to Prisma Decimal if provided
+                salary: data.salary !== undefined ? new Prisma.Decimal(data.salary) : undefined,
                 email: data.email || undefined,
                 address: data.address || null,
                 experience: data.experience || null,

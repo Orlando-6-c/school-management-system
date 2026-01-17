@@ -53,8 +53,11 @@ export default function IncomeTable({ incomeRecords }: IncomeTableProps) {
             <TableBody>
                 {incomeRecords.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={8} className="text-center h-24 text-gray-500">
-                            No income records found.
+                        <TableCell colSpan={8} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-2">
+                                <p className="text-gray-500 text-sm">No income records found.</p>
+                                <p className="text-gray-400 text-xs">Add your first income record to get started.</p>
+                            </div>
                         </TableCell>
                     </TableRow>
                 ) : (

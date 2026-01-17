@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export default async function NewExpensePage() {
     const session = await getSession();
 
-    if (!session?.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session?.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)) {
         redirect('/login'); // Redirect unauthorized users
     }
 
