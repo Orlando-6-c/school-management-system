@@ -30,6 +30,16 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
         { href: '/school/settings', label: 'Settings', icon: Settings },
     ];
 
+    // Filter links based on role
+    // If role is Finance, ONLY show Finance
+    const visibleLinks = links.filter(link => {
+        if (userRole === 'Finance') {
+            return link.label === 'Finance';
+        }
+        // Admin sees everything
+        return true;
+    });
+
     return (
         <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-10 box-border">
             {/* Brand Section */}
@@ -50,7 +60,7 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
                 <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                     Menu
                 </p>
-                {links.map((link) => {
+                {visibleLinks.map((link) => {
                     // Check if link has roles defined and if current user has one of them
                     if (link.roles && !link.roles.includes(userRole)) {
                         return null;

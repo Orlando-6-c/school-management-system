@@ -51,7 +51,7 @@ export type IncomeState = {
 export async function addIncome(prevState: IncomeState | undefined, formData: FormData): Promise<IncomeState> {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { message: 'Unauthorized' };
+        return { message: 'Access Denied: Insufficient Permissions' };
     }
 
     const rawData: any = Object.fromEntries(formData);
@@ -152,7 +152,7 @@ export type ExpenseState = {
 export async function addExpense(prevState: ExpenseState | undefined, formData: FormData): Promise<ExpenseState> {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { message: 'Unauthorized' };
+        return { message: 'Access Denied: Insufficient Permissions' };
     }
 
     const result = expenseSchema.safeParse(Object.fromEntries(formData));
@@ -323,7 +323,7 @@ export async function calculateStudentFeeBreakdown(
 export async function generateChallan(studentId: string, month: string, year: number, dueDate: Date) {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { success: false, message: 'Unauthorized' };
+        return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
     try {
@@ -433,7 +433,7 @@ export async function generateBulkChallans(
 ) {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { success: false, message: 'Unauthorized' };
+        return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
     const results: { studentId: string; success: boolean; message: string; challan?: any }[] = [];
@@ -461,7 +461,7 @@ export async function generateChallansByFilter(
 ) {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { success: false, message: 'Unauthorized' };
+        return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
     if (!month || !year || !dueDate) {
@@ -513,7 +513,7 @@ export async function generateChallansByFilter(
 export async function updateChallanStatus(challanId: string, newStatus: string, paidAmount?: number, paidAt?: Date) {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { success: false, message: 'Unauthorized' };
+        return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
     const statusEnum = newStatus as FeeStatus; // Cast to Prisma enum type
@@ -583,7 +583,7 @@ export type AdditionalChargeState = {
 export async function addAdditionalCharge(prevState: AdditionalChargeState | undefined, formData: FormData): Promise<AdditionalChargeState> {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
-        return { message: 'Unauthorized' };
+        return { message: 'Access Denied: Insufficient Permissions' };
     }
 
     const rawData: any = Object.fromEntries(formData);
@@ -689,8 +689,8 @@ export type SalaryStructureState = {
 
 export async function addSalaryStructure(prevState: SalaryStructureState | undefined, formData: FormData): Promise<SalaryStructureState> {
     const session = await getSession();
-    if (!session.schoolId || session.role !== 'SchoolAdmin') { // Only SchoolAdmin can manage salary structures
-        return { message: 'Unauthorized' };
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) { // Only SchoolAdmin/SuperAdmin can manage salary structures
+        return { message: 'Access Denied: Insufficient Permissions' };
     }
 
     const result = salaryStructureSchema.safeParse(Object.fromEntries(formData));
@@ -728,8 +728,8 @@ export async function addSalaryStructure(prevState: SalaryStructureState | undef
 
 export async function updateSalaryStructure(id: string, prevState: SalaryStructureState | undefined, formData: FormData): Promise<SalaryStructureState> {
     const session = await getSession();
-    if (!session.schoolId || session.role !== 'SchoolAdmin') {
-        return { message: 'Unauthorized' };
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
+        return { message: 'Access Denied: Insufficient Permissions' };
     }
 
     const result = salaryStructureSchema.safeParse(Object.fromEntries(formData));
@@ -767,7 +767,7 @@ export async function updateSalaryStructure(id: string, prevState: SalaryStructu
 
 export async function getSalaryStructures() {
     const session = await getSession();
-    if (!session.schoolId || session.role !== 'SchoolAdmin') {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -785,7 +785,7 @@ export async function getSalaryStructures() {
 
 export async function getSalaryStructureById(id: string) {
     const session = await getSession();
-    if (!session.schoolId || session.role !== 'SchoolAdmin') {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
         return null; // Return null if unauthorized or no schoolId
     }
 
