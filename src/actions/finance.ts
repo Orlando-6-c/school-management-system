@@ -75,16 +75,26 @@ export async function addIncome(prevState: IncomeState | undefined, formData: Fo
     const data = result.data;
 
     try {
+        const amountValue = parseFloat(data.amount.toString());
+        if (isNaN(amountValue) || amountValue <= 0) {
+            return { success: false, message: "Invalid amount. Must be a positive number." };
+        }
+
+        let dateValue = new Date(data.date);
+        if (isNaN(dateValue.getTime())) {
+            dateValue = new Date(); // Fallback to now
+        }
+
         const newIncome = await db.incomeRecord.create({
             data: {
                 schoolId: session.schoolId,
                 transactionId: `INC-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`, // Auto-generate
                 description: data.description,
-                amount: data.amount,
+                amount: amountValue, // Use parsed safe value
                 category: data.category,
                 source: data.source,
                 paymentMethod: data.paymentMethod,
-                date: data.date,
+                date: dateValue, // Use parsed safe date
                 studentId: data.studentId === '' ? null : data.studentId, // Ensure null for empty string
                 reference: data.reference || null,
                 remarks: data.remarks || null,
@@ -129,7 +139,19 @@ export async function getIncomeRecords() {
             },
             orderBy: { date: 'desc' },
         });
-        return serialize(incomeRecords);
+
+        // Safe Filtering: Remove broken records or fix them on the fly
+        const safeRecords = incomeRecords.map(record => {
+            // Ensure amount is a number
+            const amt = Number(record.amount);
+            return {
+                ...record,
+                amount: isNaN(amt) ? 0 : amt, // Fix NaN amount
+                // Ensure date is valid string or Date object
+            };
+        });
+
+        return serialize(safeRecords);
     } catch (error: any) {
         console.error('Get Income Records Error:', error);
         return [];
@@ -174,16 +196,26 @@ export async function addExpense(prevState: ExpenseState | undefined, formData: 
     const data = result.data;
 
     try {
+        const amountValue = parseFloat(data.amount.toString());
+        if (isNaN(amountValue) || amountValue <= 0) {
+            return { success: false, message: "Invalid amount. Must be a positive number." };
+        }
+
+        let dateValue = new Date(data.date);
+        if (isNaN(dateValue.getTime())) {
+            dateValue = new Date(); // Fallback to now
+        }
+
         const newExpense = await db.expenseRecord.create({
             data: {
                 schoolId: session.schoolId,
                 transactionId: `EXP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`, // Auto-generate
                 description: data.description,
-                amount: data.amount,
+                amount: amountValue, // Use parsed safe value
                 category: data.category,
                 paidTo: data.paidTo,
                 paymentMethod: data.paymentMethod,
-                date: data.date,
+                date: dateValue, // Use parsed safe date
                 reference: data.reference || null,
                 remarks: data.remarks || null,
                 isAutomatic: false, // Manual entry
@@ -218,7 +250,17 @@ export async function getExpenseRecords() {
             where: { schoolId: session.schoolId },
             orderBy: { date: 'desc' },
         });
-        return serialize(expenseRecords);
+
+        // Safe Filtering
+        const safeRecords = expenseRecords.map(record => {
+            const amt = Number(record.amount);
+            return {
+                ...record,
+                amount: isNaN(amt) ? 0 : amt,
+            };
+        });
+
+        return serialize(safeRecords);
     } catch (error: any) {
         console.error('Get Expense Records Error:', error);
         return [];

@@ -14,7 +14,13 @@ export default async function NewIncomePage() {
         redirect('/login'); // Redirect unauthorized users
     }
 
-    const students = await getStudents(session.schoolId);
+    let students: any[] = [];
+    try {
+        students = await getStudents(session.schoolId);
+    } catch (error) {
+        console.error("Failed to fetch students for income form:", error);
+        students = [];
+    }
 
     return (
         <div className="space-y-6">
