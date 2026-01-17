@@ -89,7 +89,7 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
         if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
             return { message: 'A teacher with this email already exists in this school.' };
         }
-        return { message: 'Failed to add teacher' };
+        return { message: error.message || 'Failed to add teacher' };
     }
 }
 

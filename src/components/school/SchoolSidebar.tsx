@@ -26,7 +26,7 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
         { href: '/school/students', label: 'Students', icon: GraduationCap },
         { href: '/school/teachers', label: 'Teachers', icon: Users },
         { href: '/school/academics', label: 'Academics', icon: BookOpen },
-        { href: '/school/finance', label: 'Finance', icon: DollarSign, roles: ['SchoolAdmin', 'Finance'] }, // New Finance link
+        { href: '/school/finance', label: 'Finance', icon: DollarSign, roles: ['SchoolAdmin', 'Finance', 'SuperAdmin'] }, // New Finance link
         { href: '/school/settings', label: 'Settings', icon: Settings },
     ];
 

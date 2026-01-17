@@ -50,7 +50,7 @@ export type IncomeState = {
 
 export async function addIncome(prevState: IncomeState | undefined, formData: FormData): Promise<IncomeState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { message: 'Unauthorized' };
     }
 
@@ -104,7 +104,7 @@ export async function addIncome(prevState: IncomeState | undefined, formData: Fo
 
 export async function getIncomeRecords() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -151,7 +151,7 @@ export type ExpenseState = {
 
 export async function addExpense(prevState: ExpenseState | undefined, formData: FormData): Promise<ExpenseState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { message: 'Unauthorized' };
     }
 
@@ -202,7 +202,7 @@ export async function addExpense(prevState: ExpenseState | undefined, formData: 
 
 export async function getExpenseRecords() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -322,7 +322,7 @@ export async function calculateStudentFeeBreakdown(
 
 export async function generateChallan(studentId: string, month: string, year: number, dueDate: Date) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -432,7 +432,7 @@ export async function generateBulkChallans(
     dueDate: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -460,7 +460,7 @@ export async function generateChallansByFilter(
     dueDate?: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -512,7 +512,7 @@ export async function generateChallansByFilter(
 
 export async function updateChallanStatus(challanId: string, newStatus: string, paidAmount?: number, paidAt?: Date) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -582,7 +582,7 @@ export type AdditionalChargeState = {
 
 export async function addAdditionalCharge(prevState: AdditionalChargeState | undefined, formData: FormData): Promise<AdditionalChargeState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { message: 'Unauthorized' };
     }
 
@@ -640,7 +640,7 @@ export async function addAdditionalCharge(prevState: AdditionalChargeState | und
 
 export async function getAdditionalCharges() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -848,7 +848,7 @@ export async function generateSalarySlip(
     paidAt: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -963,7 +963,7 @@ export async function generateBulkSalarySlips(
     paidAt: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -980,7 +980,7 @@ export async function generateBulkSalarySlips(
 
 export async function getSalarySlips() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -1003,7 +1003,7 @@ export async function getSalarySlips() {
 }
 export async function getTeachersForFinance() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return [];
     }
     try {
@@ -1021,7 +1021,7 @@ export async function getTeachersForFinance() {
 
 export async function getStaffForFinance() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return [];
     }
     try {
@@ -1039,7 +1039,7 @@ export async function getStaffForFinance() {
 
 export async function getExecutivesForFinance() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
+    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
         return [];
     }
     try {
