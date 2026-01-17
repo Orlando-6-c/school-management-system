@@ -5,15 +5,15 @@ import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { IncomeCategory, ExpenseCategory, FeeStatus, ChargeType, EmployeeRole, Prisma } from '@prisma/client'; // Import enums and Prisma
+import { createAuditLogEntry } from '@/lib/audit';
+
 
 // --- Income Management ---
 
 const incomeSchema = z.object({
     description: z.string().min(1, 'Description is required'),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
-    category: z.nativeEnum(IncomeCategory, {
-        errorMap: () => ({ message: 'Invalid income category' }),
-    }),
+    category: z.nativeEnum(IncomeCategory),
     source: z.string().min(1, 'Source is required'),
     paymentMethod: z.string().min(1, 'Payment method is required'),
     date: z.string().transform((str) => new Date(str)),
@@ -34,7 +34,7 @@ export async function addIncome(prevState: IncomeState | undefined, formData: Fo
         return { message: 'Unauthorized' };
     }
 
-    const rawData = Object.fromEntries(formData);
+    const rawData: any = Object.fromEntries(formData);
     // Adjust studentId to null if empty string
     if (rawData.studentId === '') {
         rawData.studentId = null;
@@ -119,9 +119,7 @@ export async function getIncomeRecords() {
 const expenseSchema = z.object({
     description: z.string().min(1, 'Description is required'),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
-    category: z.nativeEnum(ExpenseCategory, {
-        errorMap: () => ({ message: 'Invalid expense category' }),
-    }),
+    category: z.nativeEnum(ExpenseCategory),
     paidTo: z.string().min(1, 'Recipient is required'),
     paymentMethod: z.string().min(1, 'Payment method is required'),
     date: z.string().transform((str) => new Date(str)),
@@ -421,8 +419,8 @@ export async function generateBulkChallans(
         return { success: false, message: 'Unauthorized' };
     }
 
-    const results: { studentId: string; success: boolean; message: string; challan?: typeof newChallan }[] = [];
-    const generatedChallans: (typeof newChallan)[] = [];
+    const results: { studentId: string; success: boolean; message: string; challan?: any }[] = [];
+    const generatedChallans: any[] = [];
 
     for (const studentId of studentIds) {
         // Call the single challan generation function for each student
@@ -551,14 +549,10 @@ export async function updateChallanStatus(challanId: string, newStatus: string, 
 
 const additionalChargeSchema = z.object({
     name: z.string().min(1, 'Charge name is required'),
-    type: z.nativeEnum(ChargeType, {
-        errorMap: () => ({ message: 'Invalid charge type' }),
-    }),
+    type: z.nativeEnum(ChargeType),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
     applicableMonths: z.array(z.string()).optional(), // Array of month names
-    incomeCategory: z.nativeEnum(IncomeCategory, {
-        errorMap: () => ({ message: 'Invalid income category' }),
-    }),
+    incomeCategory: z.nativeEnum(IncomeCategory),
     studentId: z.string().optional().or(z.literal('')),
     classId: z.string().optional().or(z.literal('')),
 });
@@ -575,7 +569,7 @@ export async function addAdditionalCharge(prevState: AdditionalChargeState | und
         return { message: 'Unauthorized' };
     }
 
-    const rawData = Object.fromEntries(formData);
+    const rawData: any = Object.fromEntries(formData);
     // Ensure applicableMonths is an array, even if empty or single string
     const applicableMonths = formData.getAll('applicableMonths');
     if (applicableMonths.length === 0) {
@@ -990,7 +984,11 @@ export async function getSalarySlips() {
             orderBy: { paidAt: 'desc' },
         });
         return salarySlips;
-
+    } catch (error: any) {
+        console.error('Get Salary Slips Error:', error);
+        return [];
+    }
+}
 export async function getTeachersForFinance() {
     const session = await getSession();
     if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance')) {
