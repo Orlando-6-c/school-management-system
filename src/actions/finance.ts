@@ -8,6 +8,26 @@ import { IncomeCategory, ExpenseCategory, FeeStatus, ChargeType, EmployeeRole, P
 import { createAuditLogEntry } from '@/lib/audit';
 
 
+// Helper to serialize Prisma objects (convert Decimals to numbers)
+const serialize = (obj: any): any => {
+    if (Array.isArray(obj)) {
+        return obj.map(serialize);
+    }
+    if (typeof obj === 'object' && obj !== null) {
+        // Handle Prisma Decimal
+        if (obj instanceof Prisma.Decimal) {
+            return obj.toNumber();
+        }
+        // Recursive for other objects
+        const newObj: any = {};
+        for (const key in obj) {
+            newObj[key] = serialize(obj[key]);
+        }
+        return newObj;
+    }
+    return obj;
+};
+
 // --- Income Management ---
 
 const incomeSchema = z.object({
@@ -35,10 +55,6 @@ export async function addIncome(prevState: IncomeState | undefined, formData: Fo
     }
 
     const rawData: any = Object.fromEntries(formData);
-    // Adjust studentId to null if empty string
-    if (rawData.studentId === '') {
-        rawData.studentId = null;
-    }
 
     const result = incomeSchema.safeParse(rawData);
 
@@ -106,7 +122,7 @@ export async function getIncomeRecords() {
             },
             orderBy: { date: 'desc' },
         });
-        return incomeRecords;
+        return serialize(incomeRecords);
     } catch (error: any) {
         console.error('Get Income Records Error:', error);
         return [];
@@ -195,7 +211,7 @@ export async function getExpenseRecords() {
             where: { schoolId: session.schoolId },
             orderBy: { date: 'desc' },
         });
-        return expenseRecords;
+        return serialize(expenseRecords);
     } catch (error: any) {
         console.error('Get Expense Records Error:', error);
         return [];
@@ -289,7 +305,7 @@ export async function calculateStudentFeeBreakdown(
         totalAmount += Number(charge.amount);
     }
 
-    return {
+    return serialize({
         student,
         feeBreakdown,
         baseMonthlyFee: baseMonthlyFee,
@@ -299,7 +315,7 @@ export async function calculateStudentFeeBreakdown(
             id: charge.id,
             amount: Number(charge.amount),
         })),
-    };
+    });
 }
 
 // --- Challan Generation ---
@@ -401,7 +417,7 @@ export async function generateChallan(studentId: string, month: string, year: nu
         });
 
         revalidatePath('/school/finance/challans'); // New path for challans
-        return { success: true, message: `Challan ${newChallan.challanNumber} generated successfully.`, challan: newChallan };
+        return { success: true, message: `Challan ${newChallan.challanNumber} generated successfully.`, challan: serialize(newChallan) };
 
     } catch (error: any) {
         console.error('Generate Challan Error:', error);
@@ -581,11 +597,6 @@ export async function addAdditionalCharge(prevState: AdditionalChargeState | und
         rawData.applicableMonths = applicableMonths;
     }
 
-    // Convert potential empty strings to null for optional fields
-    if (rawData.studentId === '') rawData.studentId = null;
-    if (rawData.classId === '') rawData.classId = null;
-
-
     const result = additionalChargeSchema.safeParse(rawData);
 
     if (!result.success) {
@@ -654,7 +665,7 @@ export async function getAdditionalCharges() {
             },
             orderBy: { createdAt: 'desc' },
         });
-        return additionalCharges;
+        return serialize(additionalCharges);
     } catch (error: any) {
         console.error('Get Additional Charges Error:', error);
         return [];
@@ -765,7 +776,7 @@ export async function getSalaryStructures() {
             where: { schoolId: session.schoolId },
             orderBy: { name: 'asc' },
         });
-        return salaryStructures;
+        return serialize(salaryStructures);
     } catch (error: any) {
         console.error('Get Salary Structures Error:', error);
         return [];
@@ -782,7 +793,7 @@ export async function getSalaryStructureById(id: string) {
         const salaryStructure = await db.salaryStructure.findUnique({
             where: { id: id, schoolId: session.schoolId },
         });
-        return salaryStructure;
+        return serialize(salaryStructure);
     } catch (error: any) {
         console.error('Get Salary Structure By Id Error:', error);
         return null;
@@ -984,7 +995,7 @@ export async function getSalarySlips() {
             },
             orderBy: { paidAt: 'desc' },
         });
-        return salarySlips;
+        return serialize(salarySlips);
     } catch (error: any) {
         console.error('Get Salary Slips Error:', error);
         return [];
@@ -1001,7 +1012,7 @@ export async function getTeachersForFinance() {
             include: { salaryStructure: true },
             orderBy: { firstName: 'asc' },
         });
-        return teachers;
+        return serialize(teachers);
     } catch (error: any) {
         console.error('Get Teachers For Finance Error:', error);
         return [];
@@ -1019,7 +1030,7 @@ export async function getStaffForFinance() {
             include: { salaryStructure: true },
             orderBy: { name: 'asc' },
         });
-        return staff;
+        return serialize(staff);
     } catch (error: any) {
         console.error('Get Staff For Finance Error:', error);
         return [];
@@ -1037,7 +1048,7 @@ export async function getExecutivesForFinance() {
             include: { salaryStructure: true },
             orderBy: { name: 'asc' },
         });
-        return executives;
+        return serialize(executives);
     } catch (error: any) {
         console.error('Get Executives For Finance Error:', error);
         return [];
