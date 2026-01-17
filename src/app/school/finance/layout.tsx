@@ -9,12 +9,8 @@ export default async function FinanceLayout({
     const session = await getSession();
 
     // Check if user is authorized to access finance module
-    // STRICT RULE: 'Finance' role (Clerk) is NOT allowed here. Only SchoolAdmin/SuperAdmin.
-    if (!session.userId || !session.schoolId || !(session.role === 'SchoolAdmin' || session.isSuperAdmin)) {
-        // If it's a clerk (Finance role) trying to access, redirect them to main dashboard
-        if (session.role === 'Finance') {
-            redirect('/school');
-        }
+    // Allow SchoolAdmin, SuperAdmin, AND Finance role (Clerk)
+    if (!session.userId || !session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)) {
         redirect('/login'); // Redirect unauthorized users
     }
 

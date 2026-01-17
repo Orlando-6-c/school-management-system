@@ -10,14 +10,21 @@ import { createAuditLogEntry } from '@/lib/audit';
 
 // Helper to serialize Prisma objects (convert Decimals to numbers)
 const serialize = (obj: any): any => {
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
     if (Array.isArray(obj)) {
         return obj.map(serialize);
     }
-    if (typeof obj === 'object' && obj !== null) {
+    if (typeof obj === 'object') {
         // Handle Prisma Decimal
         if (obj instanceof Prisma.Decimal) {
             return obj.toNumber();
         }
+        // Handle Date (to ISO string for client components if needed, but Dates are fine in RSC usually 
+        // IF they are plain objects. However, Next.js generic serialization handles dates fine usually.
+        // But preventing 'Maximum call stack' on complex circulars is good practice)
+
         // Recursive for other objects
         const newObj: any = {};
         for (const key in obj) {
