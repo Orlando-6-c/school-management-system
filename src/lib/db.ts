@@ -1,6 +1,5 @@
 import 'server-only';
 import { PrismaClient } from '@prisma/client';
-import { getSession } from './session';
 
 const prismaClientSingleton = () => {
     return new PrismaClient().$extends({
@@ -24,6 +23,7 @@ const prismaClientSingleton = () => {
                     if (isMutation && model) {
                         Promise.resolve().then(async () => {
                             try {
+                                const { getSession } = await import('./session');
                                 const session = await getSession();
                                 if (session && session.userId && session.schoolId) {
                                     const rawDb = globalThis.prismaGlobal || new PrismaClient();
