@@ -30,8 +30,8 @@ export default async function AdmissionPage() {
     return (
         <div className="max-w-5xl mx-auto py-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">New Admission</h1>
-                <p className="text-gray-500 mt-2">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">New Admission</h1>
+                <p className="text-muted-foreground mt-2">
                     Admit a new student or add a sibling.
                 </p>
             </div>

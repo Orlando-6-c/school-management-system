@@ -118,8 +118,8 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
         }
     };
 
-    const inputClasses = "bg-white text-gray-900 border-gray-300 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClasses = "text-gray-700 font-medium";
+    const inputClasses = "bg-card text-foreground border-input focus:ring-indigo-500 focus:border-indigo-500";
+    const labelClasses = "text-muted-foreground font-medium";
 
     return (
         <form action={action} className="space-y-8">
@@ -134,8 +134,8 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
 
             <div className="grid gap-8 md:grid-cols-2">
                 {/* Guardian Card */}
-                <Card className="bg-white shadow-sm border-gray-200">
-                    <CardHeader><CardTitle className="text-gray-900">Guardian Information</CardTitle></CardHeader>
+                <Card className="bg-card shadow-sm border-border">
+                    <CardHeader><CardTitle className="text-foreground">Guardian Information</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex gap-2 items-end">
                             <div className="grid gap-2 flex-1">
@@ -153,33 +153,33 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
                                     }}
                                 />
                             </div>
-                            <Button type="button" variant="outline" onClick={handleCnicSearch} disabled={searching} className="bg-white text-gray-700 border-gray-300">
+                            <Button type="button" variant="outline" onClick={handleCnicSearch} disabled={searching} className="bg-card text-muted-foreground border-input">
                                 {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                             </Button>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="guardianName" className={labelClasses}>Name</Label>
-                            <Input id="guardianName" required readOnly={guardianFound} className={guardianFound ? "bg-gray-50" : inputClasses} {...register("guardianName")} />
+                            <Input id="guardianName" required readOnly={guardianFound} className={guardianFound ? "bg-muted" : inputClasses} {...register("guardianName")} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="guardianRelation" className={labelClasses}>Relation</Label>
-                            <Input id="guardianRelation" required readOnly={guardianFound} className={guardianFound ? "bg-gray-50" : inputClasses} {...register("guardianRelation")} />
+                            <Input id="guardianRelation" required readOnly={guardianFound} className={guardianFound ? "bg-muted" : inputClasses} {...register("guardianRelation")} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="guardianContact" className={labelClasses}>Contact</Label>
-                            <Input id="guardianContact" required readOnly={guardianFound} className={guardianFound ? "bg-gray-50" : inputClasses} {...register("guardianContact")} />
+                            <Input id="guardianContact" required readOnly={guardianFound} className={guardianFound ? "bg-muted" : inputClasses} {...register("guardianContact")} />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Student Card */}
-                <Card className="bg-white shadow-sm border-gray-200">
-                    <CardHeader><CardTitle className="text-gray-900">Student Information</CardTitle></CardHeader>
+                <Card className="bg-card shadow-sm border-border">
+                    <CardHeader><CardTitle className="text-foreground">Student Information</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="photograph" className={labelClasses}>Photo</Label>
                             <Input id="photograph" type="file" accept="image/*" className={inputClasses} onChange={handleImageChange} />
-                            <p className="text-xs text-gray-500">Max 2MB. Preview not shown.</p>
+                            <p className="text-xs text-muted-foreground">Max 2MB. Preview not shown.</p>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="name" className={labelClasses}>Full Name</Label>
@@ -219,8 +219,8 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
                 </Card>
 
                 {/* Financials Card */}
-                <Card className="md:col-span-2 bg-white shadow-sm border-gray-200">
-                    <CardHeader><CardTitle className="text-gray-900">Financials</CardTitle></CardHeader>
+                <Card className="md:col-span-2 bg-card shadow-sm border-border">
+                    <CardHeader><CardTitle className="text-foreground">Financials</CardTitle></CardHeader>
                     <CardContent className="grid md:grid-cols-3 gap-6">
                         <div className="grid gap-2">
                             <Label htmlFor="monthlyFees" className={labelClasses}>Monthly Fee</Label>
@@ -232,13 +232,13 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
                         </div>
                         <div className="grid gap-2">
                             <Label className={labelClasses}>Final Fee</Label>
-                            <div className="flex h-10 w-full items-center rounded-md border border-gray-300 bg-gray-50 px-3 text-sm font-bold text-gray-900">{finalFee}</div>
+                            <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 text-sm font-bold text-foreground">{finalFee}</div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
             <div className="flex justify-end">
-                <Button type="submit" size="lg" disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button type="submit" size="lg" disabled={isSubmitting} className="bg-primary hover:bg-primary text-white">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Admit Student'}
                 </Button>
             </div>

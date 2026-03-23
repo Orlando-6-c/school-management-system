@@ -95,7 +95,7 @@ export default async function SchoolDashboard() {
                                     <p className="text-center text-muted-foreground py-4">No recent transactions found.</p>
                                 ) : (
                                     recentTransactions.map((transaction: any) => (
-                                        <div key={transaction.transactionId || Math.random()} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                        <div key={transaction.transactionId || Math.random()} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors">
                                             <div className="flex items-center space-x-3">
                                                 <div className={`p-2 rounded-full ${transaction.type === 'Income' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
                                                     {transaction.type === 'Income' ? (

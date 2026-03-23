@@ -38,7 +38,7 @@ export default async function StudentsPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Student Directory</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Student Directory</h1>
                 <div className="flex gap-2">
                     <PrintDirectoryButton classes={classes} />
                     <Link href="/school/students/new">
@@ -50,20 +50,20 @@ export default async function StudentsPage() {
                 </div>
             </div>
 
-            <Card className="bg-white border-gray-200 shadow-sm print:shadow-none print:border-none">
+            <Card className="bg-card border-border shadow-sm print:shadow-none print:border-none">
                 <CardHeader className="print:hidden">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-gray-900">Enrolled Students</CardTitle>
+                            <CardTitle className="text-foreground">Enrolled Students</CardTitle>
                             <CardDescription>
                                 Total Students: {students.length}
                             </CardDescription>
                         </div>
                         <div className="relative w-64">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search by name, roll no..."
-                                className="pl-8 bg-white border-gray-300"
+                                className="pl-8 bg-card border-input"
                             />
                         </div>
                     </div>

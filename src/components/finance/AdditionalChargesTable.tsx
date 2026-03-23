@@ -53,7 +53,7 @@ export default function AdditionalChargesTable({ additionalCharges }: Additional
             <TableBody>
                 {additionalCharges.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24 text-gray-500">
+                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                             No additional charges found.
                         </TableCell>
                     </TableRow>

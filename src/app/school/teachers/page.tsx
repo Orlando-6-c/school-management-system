@@ -41,11 +41,11 @@ export default async function TeachersPage() {
                 </div>
             </div>
 
-            <Card className="bg-white border-gray-200 shadow-sm print:shadow-none print:border-none">
+            <Card className="bg-card border-border shadow-sm print:shadow-none print:border-none">
                 <CardHeader className="print:hidden">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-gray-900">Registered Teachers</CardTitle>
+                            <CardTitle className="text-foreground">Registered Teachers</CardTitle>
                             <CardDescription>
                                 Total Teachers: {teachers.length}
                             </CardDescription>

@@ -34,7 +34,7 @@ export function CreateClassDialog({ teachers }: CreateClassDialogProps) {
         setOpen(false);
     }
 
-    const inputClasses = "bg-white text-gray-900 border-gray-300 focus:ring-gray-400 focus:border-gray-400";
+    const inputClasses = "bg-card text-foreground border-input focus:ring-gray-400 focus:border-gray-400";
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -44,7 +44,7 @@ export function CreateClassDialog({ teachers }: CreateClassDialogProps) {
                     Add Class
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white text-gray-900">
+            <DialogContent className="sm:max-w-[425px] bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle>Create New Class</DialogTitle>
                     <DialogDescription>
@@ -59,7 +59,7 @@ export function CreateClassDialog({ teachers }: CreateClassDialogProps) {
                     )}
 
                     <div className="grid gap-2">
-                        <Label htmlFor="name" className="text-gray-700">Class Name</Label>
+                        <Label htmlFor="name" className="text-muted-foreground">Class Name</Label>
                         <select
                             name="name"
                             id="name"
@@ -84,17 +84,17 @@ export function CreateClassDialog({ teachers }: CreateClassDialogProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="section" className="text-gray-700">Section (Optional)</Label>
+                        <Label htmlFor="section" className="text-muted-foreground">Section (Optional)</Label>
                         <Input id="section" name="section" placeholder="e.g. A, Blue, Gold" className={inputClasses} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="monthlyTuitionFee" className="text-gray-700">Monthly Tuition Fee</Label>
+                        <Label htmlFor="monthlyTuitionFee" className="text-muted-foreground">Monthly Tuition Fee</Label>
                         <Input id="monthlyTuitionFee" name="monthlyTuitionFee" type="number" min="0" defaultValue="0" required className={inputClasses} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="classTeacherId" className="text-gray-700">Designated Class Teacher (Optional)</Label>
+                        <Label htmlFor="classTeacherId" className="text-muted-foreground">Designated Class Teacher (Optional)</Label>
                         <select
                             name="classTeacherId"
                             id="classTeacherId"
@@ -110,7 +110,7 @@ export function CreateClassDialog({ teachers }: CreateClassDialogProps) {
                     </div>
 
                     <DialogFooter>
-                        <Button type="submit" disabled={pending} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <Button type="submit" disabled={pending} className="bg-primary hover:bg-primary text-white">
                             {pending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

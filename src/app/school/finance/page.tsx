@@ -33,7 +33,7 @@ export default async function FinancePage() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Finance Dashboard</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Finance Dashboard</h1>
                 <div className="flex space-x-2">
                     <Link href="/school/finance/income/new">
                         <Button className="bg-green-600 hover:bg-green-700">
@@ -55,7 +55,7 @@ export default async function FinancePage() {
                         <ArrowUpRight className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-900">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold text-foreground">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground mt-1">All time income</p>
                     </CardContent>
                 </Card>
@@ -65,7 +65,7 @@ export default async function FinancePage() {
                         <ArrowDownRight className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-900">${totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold text-foreground">${totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground mt-1">All time expenses</p>
                     </CardContent>
                 </Card>
@@ -91,10 +91,10 @@ export default async function FinancePage() {
                     <CardContent>
                         <div className="space-y-4">
                             {recentTransactions.length === 0 ? (
-                                <p className="text-center text-gray-500 py-4">No recent transactions found.</p>
+                                <p className="text-center text-muted-foreground py-4">No recent transactions found.</p>
                             ) : (
                                 recentTransactions.map((transaction: any) => (
-                                    <div key={transaction.transactionId || Math.random()} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                                    <div key={transaction.transactionId || Math.random()} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted transition-colors">
                                         <div className="flex items-center space-x-4">
                                             <div className={`p-2 rounded-full ${transaction.type === 'Income' ? 'bg-green-100' : 'bg-red-100'}`}>
                                                 {transaction.type === 'Income' ? (
@@ -104,8 +104,8 @@ export default async function FinancePage() {
                                                 )}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-gray-900">{transaction.description || 'No Description'}</p>
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-sm font-medium text-foreground">{transaction.description || 'No Description'}</p>
+                                                <p className="text-xs text-muted-foreground">
                                                     {transaction.date ? format(new Date(transaction.date), 'MMM dd, yyyy') : 'N/A'} • {transaction.category || 'Uncategorized'}
                                                 </p>
                                             </div>

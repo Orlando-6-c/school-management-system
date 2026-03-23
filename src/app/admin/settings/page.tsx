@@ -11,10 +11,10 @@ export default function SettingsPage() {
 
     return (
         <div className="p-8 max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Settings</h1>
-            <p className="text-gray-600 mb-8">Manage your account security.</p>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">Update Credentials</h2>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Settings</h1>
+            <p className="text-muted-foreground mb-8">Manage your account security.</p>
+            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                <h2 className="text-xl font-semibold text-foreground mb-6">Update Credentials</h2>
                 {state?.success && (
                     <div className="bg-green-50 text-green-700 p-4 rounded-lg flex items-center mb-6">
                         <CheckCircle2 className="mr-2 h-5 w-5" />
@@ -34,7 +34,7 @@ export default function SettingsPage() {
                             name="currentPassword"
                             type="password"
                             required
-                            className="bg-white text-gray-900 border-gray-300 focus:ring-gray-400"
+                            className="bg-card text-foreground border-input focus:ring-gray-400"
                         />
                         {state?.errors?.currentPassword && (
                             <p className="text-red-600 text-xs">{state.errors.currentPassword[0]}</p>
@@ -47,7 +47,7 @@ export default function SettingsPage() {
                             id="newUsername"
                             name="newUsername"
                             placeholder="Leave blank to keep current"
-                            className="bg-white text-gray-900 border-gray-300 focus:ring-gray-400"
+                            className="bg-card text-foreground border-input focus:ring-gray-400"
                         />
                         {state?.errors?.newUsername && (
                             <p className="text-red-600 text-xs">{state.errors.newUsername[0]}</p>
@@ -60,7 +60,7 @@ export default function SettingsPage() {
                             name="newPassword"
                             type="password"
                             placeholder="Leave blank to keep current"
-                            className="bg-white text-gray-900 border-gray-300 focus:ring-gray-400"
+                            className="bg-card text-foreground border-input focus:ring-gray-400"
                         />
                         {state?.errors?.newPassword && (
                             <p className="text-red-600 text-xs">{state.errors.newPassword[0]}</p>

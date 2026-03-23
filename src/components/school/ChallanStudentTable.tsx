@@ -70,7 +70,7 @@ export function ChallanStudentTable({ students, selectedStudents, onSelectionCha
             <TableBody>
                 {students.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center h-24 text-gray-500">
+                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                             No students match the current filters.
                         </TableCell>
                     </TableRow>

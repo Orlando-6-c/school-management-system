@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
         if (session.userId) {
             if (session.isSuperAdmin) {
                 return NextResponse.redirect(new URL('/admin', request.url));
-            } else if (session.role === 'SchoolAdmin') {
+            } else if (session.role === 'SchoolAdmin' || session.role === 'Finance') {
                 return NextResponse.redirect(new URL('/school', request.url));
             } else {
                 return NextResponse.redirect(new URL('/dashboard', request.url));

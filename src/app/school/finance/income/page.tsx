@@ -22,7 +22,7 @@ export default async function IncomePage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Income Management</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Income Management</h1>
                 <Link href="/school/finance/income/new">
                     <Button>
                         <Plus className="mr-2 h-4 w-4" />
@@ -31,9 +31,9 @@ export default async function IncomePage() {
                 </Link>
             </div>
 
-            <Card className="bg-white border-gray-200 shadow-sm">
+            <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">All Income Records</CardTitle>
+                    <CardTitle className="text-foreground">All Income Records</CardTitle>
                     <CardDescription>
                         Total Income Records: {incomeRecords.length}
                     </CardDescription>

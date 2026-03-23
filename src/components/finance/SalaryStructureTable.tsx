@@ -44,7 +44,7 @@ export default function SalaryStructureTable({ salaryStructures }: SalaryStructu
             <TableBody>
                 {salaryStructures.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24 text-gray-500">
+                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                             No salary structures found.
                         </TableCell>
                     </TableRow>

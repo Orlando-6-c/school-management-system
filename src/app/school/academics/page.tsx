@@ -66,8 +66,8 @@ export default async function AcademicsPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Academics</h1>
-                    <p className="text-gray-500 mt-2">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Academics</h1>
+                    <p className="text-muted-foreground mt-2">
                         Manage classes and sections.
                     </p>
                 </div>
@@ -77,15 +77,15 @@ export default async function AcademicsPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Empty State Handling */}
                 {(!classes || classes.length === 0) ? (
-                    <div className="col-span-full text-center py-12 text-gray-500 bg-white rounded-lg border border-dashed border-gray-300">
+                    <div className="col-span-full text-center py-12 text-muted-foreground bg-card rounded-lg border border-dashed border-input">
                         <p className="mb-2">No classes found.</p>
                         <p className="text-sm">Create your first class to get started.</p>
                     </div>
                 ) : (
                     classes.map((cls) => (
-                        <Card key={cls.id} className="bg-white shadow-sm border-gray-200 hover:shadow-md transition-shadow">
+                        <Card key={cls.id} className="bg-card shadow-sm border-border hover:shadow-md transition-shadow">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-lg font-bold text-gray-900">
+                                <CardTitle className="text-lg font-bold text-foreground">
                                     {cls.name}
                                 </CardTitle>
                                 {cls.section && (
@@ -97,12 +97,12 @@ export default async function AcademicsPage() {
                             <CardContent>
                                 <div className="space-y-4 mt-2">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500">Students</span>
-                                        <span className="font-medium text-gray-900">{cls._count?.students ?? 0}</span>
+                                        <span className="text-muted-foreground">Students</span>
+                                        <span className="font-medium text-foreground">{cls._count?.students ?? 0}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500">Class Teacher</span>
-                                        <span className="font-medium text-gray-900 text-right truncate max-w-[150px]">
+                                        <span className="text-muted-foreground">Class Teacher</span>
+                                        <span className="font-medium text-foreground text-right truncate max-w-[150px]">
                                             {/* Defensive check for teacher assignments and teacher object */}
                                             {cls.teacherAssignments && cls.teacherAssignments.length > 0 && cls.teacherAssignments[0].teacher
                                                 ? `${cls.teacherAssignments[0].teacher.firstName} ${cls.teacherAssignments[0].teacher.lastName}`

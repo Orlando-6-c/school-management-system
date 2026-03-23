@@ -22,7 +22,7 @@ export default async function SalarySlipsPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Salary Slips</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Salary Slips</h1>
                 <Link href="/school/finance/salary-slips/generate">
                     <Button>
                         <Plus className="mr-2 h-4 w-4" />
@@ -31,9 +31,9 @@ export default async function SalarySlipsPage() {
                 </Link>
             </div>
 
-            <Card className="bg-white border-gray-200 shadow-sm">
+            <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">All Salary Slips</CardTitle>
+                    <CardTitle className="text-foreground">All Salary Slips</CardTitle>
                     <CardDescription>
                         Total Salary Slips: {salarySlips.length}
                     </CardDescription>

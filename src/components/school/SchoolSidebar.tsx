@@ -61,7 +61,7 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
         <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-10 box-border">
             {/* Brand Section */}
             <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-                <div className="bg-indigo-600 p-2 rounded-lg">
+                <div className="bg-primary p-2 rounded-lg">
                     <School className="h-6 w-6 text-white" />
                 </div>
                 <div>
@@ -90,7 +90,7 @@ export function SchoolSidebar({ schoolName, schoolSlug, userName, userRole }: Sc
                             className={cn(
                                 "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-medium text-sm",
                                 isActive(link.href)
-                                    ? "bg-indigo-600 text-white shadow-sm"
+                                    ? "bg-primary text-white shadow-sm"
                                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                             )}
                         >

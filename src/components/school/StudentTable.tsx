@@ -81,7 +81,7 @@ export function StudentTable({ students, session, classes }: StudentTableProps) 
                 <TableBody>
                     {students.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="text-center h-24 text-gray-500">
+                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                                 No students found. Admit a student to get started.
                             </TableCell>
                         </TableRow>
@@ -94,27 +94,27 @@ export function StudentTable({ students, session, classes }: StudentTableProps) 
                                         <img
                                             src={student.photograph}
                                             alt={student.name}
-                                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                            className="h-10 w-10 rounded-full object-cover border border-border"
                                         />
                                     ) : (
-                                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 border border-gray-200">
+                                        <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-xs text-gray-400 border border-border">
                                             No Pic
                                         </div>
                                     )}
                                 </TableCell>
 
-                                <TableCell className="font-medium text-gray-900">
+                                <TableCell className="font-medium text-foreground">
                                     {student.rollNumber}
                                 </TableCell>
-                                <TableCell className="text-gray-700">
+                                <TableCell className="text-muted-foreground">
                                     {student.name}
                                 </TableCell>
                                 <TableCell>
-                                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-indigo-700/10">
                                         {student.class?.name ?? 'Unassigned'} {student.class?.section ? `(${student.class.section})` : ''}
                                     </span>
                                 </TableCell>
-                                <TableCell className="text-gray-600">
+                                <TableCell className="text-muted-foreground">
                                     {student.guardian?.name || 'N/A'}
                                     <div className="text-xs text-gray-400">
                                         {student.guardian?.contact || 'No Contact'}
@@ -126,12 +126,12 @@ export function StudentTable({ students, session, classes }: StudentTableProps) 
                                             <span className="text-xs line-through text-gray-400">
                                                 {Number(student.monthlyFees)}
                                             </span>
-                                            <span className="font-bold text-gray-900">
+                                            <span className="font-bold text-foreground">
                                                 {Number(student.finalFee)}
                                             </span>
                                         </div>
                                     ) : (
-                                        <span className="font-bold text-gray-900">
+                                        <span className="font-bold text-foreground">
                                             {Number(student.monthlyFees)}
                                         </span>
                                     )}
@@ -150,7 +150,7 @@ export function StudentTable({ students, session, classes }: StudentTableProps) 
                                         {/* Individual Print Button */}
                                         <Button variant="ghost" size="icon" title="Print Student Info" asChild>
                                             <Link href={`/school/students/${student.id}/print`} target="_blank">
-                                                <Printer className="h-4 w-4 text-gray-600" />
+                                                <Printer className="h-4 w-4 text-muted-foreground" />
                                             </Link>
                                         </Button>
 

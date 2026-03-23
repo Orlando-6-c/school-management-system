@@ -15,11 +15,11 @@ export default async function NewSalaryStructurePage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Add New Salary Structure</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Add New Salary Structure</h1>
 
-            <Card className="bg-white border-gray-200 shadow-sm">
+            <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">Structure Details</CardTitle>
+                    <CardTitle className="text-foreground">Structure Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <SalaryStructureForm />

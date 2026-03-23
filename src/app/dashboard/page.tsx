@@ -20,12 +20,12 @@ export default async function DashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="min-h-screen bg-muted p-8">
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                        <p className="text-gray-600 mt-2">
+                        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+                        <p className="text-muted-foreground mt-2">
                             Welcome back, {session.username} ({session.schoolSlug})
                         </p>
                     </div>
@@ -36,9 +36,9 @@ export default async function DashboardPage() {
                     </form>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Under Construction</h2>
-                    <p className="text-gray-500">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center">
+                    <h2 className="text-xl font-semibold text-foreground mb-4">Under Construction</h2>
+                    <p className="text-muted-foreground">
                         The School Management Dashboard is being set up. Check back soon!
                     </p>
                 </div>

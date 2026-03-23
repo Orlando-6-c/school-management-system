@@ -24,10 +24,10 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
     }, [state]);
 
     // Simple inline form
-    const inputClasses = "bg-white text-gray-900 border-gray-300 focus:ring-gray-400 focus:border-gray-400";
+    const inputClasses = "bg-card text-foreground border-input focus:ring-gray-400 focus:border-gray-400";
 
     return (
-        <Card className="bg-white shadow-sm border-gray-200">
+        <Card className="bg-card shadow-sm border-border">
             <CardHeader>
                 <CardTitle>Add New Class</CardTitle>
             </CardHeader>
@@ -40,7 +40,7 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
                     )}
 
                     <div className="grid gap-2">
-                        <Label htmlFor="name" className="text-gray-700">Class Name</Label>
+                        <Label htmlFor="name" className="text-muted-foreground">Class Name</Label>
                         <select
                             name="name"
                             className={`flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${inputClasses}`}
@@ -64,18 +64,18 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="section" className="text-gray-700">Section (Optional)</Label>
+                        <Label htmlFor="section" className="text-muted-foreground">Section (Optional)</Label>
                         <Input name="section" placeholder="e.g. A" className={inputClasses} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="monthlyTuitionFee" className="text-gray-700">Monthly Tuition Fee</Label>
+                        <Label htmlFor="monthlyTuitionFee" className="text-muted-foreground">Monthly Tuition Fee</Label>
                         {/* Input type number, min 0 */}
                         <Input name="monthlyTuitionFee" type="number" min="0" required defaultValue="0" className={inputClasses} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="classTeacherId" className="text-gray-700">Designated Teacher</Label>
+                        <Label htmlFor="classTeacherId" className="text-muted-foreground">Designated Teacher</Label>
                         <select
                             name="classTeacherId"
                             className={`flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${inputClasses}`}
@@ -87,7 +87,7 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
                         </select>
                     </div>
 
-                    <Button type="submit" disabled={pending} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Button type="submit" disabled={pending} className="w-full bg-primary hover:bg-primary text-white">
                         {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Class'}
                     </Button>
                 </form>

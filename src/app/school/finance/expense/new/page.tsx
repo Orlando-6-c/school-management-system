@@ -15,11 +15,11 @@ export default async function NewExpensePage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Add New Expense</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Add New Expense</h1>
 
-            <Card className="bg-white border-gray-200 shadow-sm">
+            <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">Expense Details</CardTitle>
+                    <CardTitle className="text-foreground">Expense Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ExpenseForm />

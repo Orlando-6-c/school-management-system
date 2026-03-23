@@ -49,7 +49,7 @@ export default function ExpenseTable({ expenseRecords }: ExpenseTableProps) {
                     <TableRow>
                         <TableCell colSpan={7} className="text-center py-12">
                             <div className="flex flex-col items-center gap-2">
-                                <p className="text-gray-500 text-sm">No expense records found.</p>
+                                <p className="text-muted-foreground text-sm">No expense records found.</p>
                                 <p className="text-gray-400 text-xs">Add your first expense record to get started.</p>
                             </div>
                         </TableCell>

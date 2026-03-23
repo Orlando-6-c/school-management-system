@@ -22,7 +22,7 @@ export default async function PrintStudentPage({ params }: { params: { id: strin
     if (!student) notFound();
 
     return (
-        <div className="bg-white p-8 max-w-4xl mx-auto print:p-0">
+        <div className="bg-card p-8 max-w-4xl mx-auto print:p-0">
             <AutoPrint />
 
             {/* Header */}

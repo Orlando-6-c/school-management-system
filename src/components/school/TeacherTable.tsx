@@ -81,7 +81,7 @@ export function TeacherTable({ teachers, session }: TeacherTableProps) {
                         <TableRow>
                             <TableCell colSpan={7} className="text-center py-12">
                                 <div className="flex flex-col items-center gap-3">
-                                    <p className="text-gray-500 text-sm font-medium">No teachers found.</p>
+                                    <p className="text-muted-foreground text-sm font-medium">No teachers found.</p>
                                     <p className="text-gray-400 text-xs">Add your first teacher to get started.</p>
                                 </div>
                             </TableCell>

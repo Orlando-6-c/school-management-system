@@ -42,11 +42,11 @@ export default async function GenerateSalarySlipsPage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Generate Salary Slips</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Generate Salary Slips</h1>
 
-            <Card className="bg-white border-gray-200 shadow-sm">
+            <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-gray-900">Select Employees and Generate</CardTitle>
+                    <CardTitle className="text-foreground">Select Employees and Generate</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <GenerateSalarySlipsForm employees={allEmployees} />

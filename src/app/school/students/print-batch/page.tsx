@@ -32,17 +32,17 @@ export default async function BatchPrintPage({ searchParams }: { searchParams: {
     });
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-card min-h-screen">
             <AutoPrint />
-            <div className="print:hidden p-4 text-center bg-gray-100 border-b">
-                <p className="text-sm text-gray-600">
+            <div className="print:hidden p-4 text-center bg-secondary border-b">
+                <p className="text-sm text-muted-foreground">
                     Printing {students.length} student records.
                     {classId ? ' Filtered by Class.' : ' All Classes.'}
                 </p>
             </div>
 
             {students.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-muted-foreground">
                     No students found matching your criteria.
                 </div>
             ) : (

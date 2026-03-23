@@ -245,11 +245,11 @@ export default function SettingsForm({ initialSettings }: SettingsFormProps) {
                             )}
                             {initialSettings.logo && (
                                 <div className="mt-2">
-                                    <p className="text-sm text-gray-600 mb-2">Current Logo:</p>
+                                    <p className="text-sm text-muted-foreground mb-2">Current Logo:</p>
                                     <img
                                         src={initialSettings.logo}
                                         alt="School Logo"
-                                        className="h-20 w-auto object-contain border border-gray-200 rounded"
+                                        className="h-20 w-auto object-contain border border-border rounded"
                                     />
                                 </div>
                             )}

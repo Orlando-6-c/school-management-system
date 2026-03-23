@@ -54,7 +54,7 @@ export default function SalarySlipTable({ salarySlips }: SalarySlipTableProps) {
             <TableBody>
                 {salarySlips.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={9} className="text-center h-24 text-gray-500">
+                        <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
                             No salary slips found.
                         </TableCell>
                     </TableRow>

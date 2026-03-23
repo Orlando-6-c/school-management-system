@@ -17,7 +17,7 @@ export default async function SettingsPage() {
     if (!settings) {
         return (
             <div className="space-y-6">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Settings</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
                 <div className="bg-red-50 text-red-700 p-4 rounded-lg">
                     Failed to load settings. Please try again.
                 </div>
@@ -28,8 +28,8 @@ export default async function SettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">School Settings</h1>
-                <p className="text-gray-600 mt-2">Manage your school configuration and preferences.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">School Settings</h1>
+                <p className="text-muted-foreground mt-2">Manage your school configuration and preferences.</p>
             </div>
 
             <SettingsForm initialSettings={settings} />

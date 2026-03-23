@@ -155,7 +155,7 @@ export default function GenerateSalarySlipsForm({ employees }: GenerateSalarySli
                 <Label className="text-base font-semibold">Select Employees to Generate Slips</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-60 overflow-y-auto border p-4 rounded-md">
                     {employees.length === 0 ? (
-                        <p className="col-span-full text-center text-gray-500">No employees found or no employees without a salary structure.</p>
+                        <p className="col-span-full text-center text-muted-foreground">No employees found or no employees without a salary structure.</p>
                     ) : (
                         employees.map((employee) => (
                             <div key={employee.id} className="flex items-center space-x-2">
