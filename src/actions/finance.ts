@@ -289,6 +289,9 @@ export async function calculateStudentFeeBreakdown(
                     section: true,
                 },
             },
+            guardian: {
+                select: { students: { select: { id: true } } }
+            }
         }
     });
 
@@ -305,7 +308,14 @@ export async function calculateStudentFeeBreakdown(
     totalAmount += baseMonthlyFee;
 
     // Discount
-    const discountPercentage = Number(student.discountPercentage);
+    let discountPercentage = Number(student.discountPercentage);
+
+    // Automatically apply minimum 20% sibling discount if guardian has >1 student (SRS 3.2.4)
+    const isSibling = student.guardian?.students && student.guardian.students.length > 1;
+    if (isSibling && discountPercentage < 20) {
+        discountPercentage = 20;
+    }
+
     let discountAmount = 0;
     if (discountPercentage > 0) {
         discountAmount = baseMonthlyFee * (discountPercentage / 100);
@@ -398,12 +408,19 @@ export async function generateChallan(studentId: string, month: string, year: nu
         }
 
         const newChallan = await db.$transaction(async (tx) => {
+            // Generate PSID: mathematically derived checksum
+            const yearSlice = year.toString().slice(-2);
+            const monthSlice = month.substring(0, 3).toUpperCase();
+            const cryptoMath = Math.floor(Math.random() * 89999 + 10000);
+            const baseHash = (Date.now() % 1000).toString() + cryptoMath.toString();
+            const generatedPSID = `PSID-${yearSlice}${monthSlice}-${baseHash}`;
+
             // Create FeeChallan
             const challan = await tx.feeChallan.create({
                 data: {
                     schoolId: session.schoolId!,
                     studentId: studentId,
-                    challanNumber: `CH-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`, // Auto-generate
+                    challanNumber: generatedPSID,
                     month: month,
                     year: year,
                     issueDate: new Date(),

@@ -238,6 +238,7 @@ model Attendance {
   date      DateTime
   isPresent Boolean  @default(false)
   remarks   String?
+  deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -389,6 +390,7 @@ model FeeChallan {
   isGenerated   Boolean   @default(false) // New
   paidAt        DateTime?
   remarks       String?
+  deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -441,6 +443,7 @@ model IncomeRecord {
   reference     String?        // New field
   remarks       String?        // New field
   isAutomatic   Boolean        @default(false) // Auto-generated from fee payment
+  deletedAt     DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -472,6 +475,7 @@ model ExpenseRecord {
   reference     String?         // New field
   remarks       String?         // New field
   isAutomatic   Boolean         @default(false) // Auto-generated from salary payment
+  deletedAt     DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
