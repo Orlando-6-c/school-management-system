@@ -21,6 +21,7 @@ import {
     ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export interface NavVisibility {
     students: boolean;
@@ -47,15 +48,15 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSid
     const pathname = usePathname();
 
     const isActive = (path: string) =>
-        pathname === path || pathname?.startsWith(`${path}/`);
+        pathname === path || (path !== '/school' && pathname?.startsWith(`${path}/`));
 
-    // Each link is gated by a boolean derived from the user's resolved permissions.
     const links = [
         { href: '/school', label: 'Dashboard', icon: LayoutDashboard, show: true },
         { href: '/school/students', label: 'Students', icon: GraduationCap, show: nav.students },
         { href: '/school/teachers', label: 'Teachers', icon: Users, show: nav.teachers },
         { href: '/school/staff', label: 'Staff', icon: Briefcase, show: nav.staff },
         { href: '/school/parents', label: 'Parents', icon: Users, show: nav.parents },
+        { href: '/school/classes', label: 'Classes', icon: BookOpen, show: nav.academics || nav.students },
         { href: '/school/academics', label: 'Academics', icon: BookOpen, show: nav.academics },
         { href: '/school/academics/timetable', label: 'Timetables', icon: Calendar, show: nav.academics },
         { href: '/school/attendance', label: 'Attendance', icon: ClipboardList, show: nav.attendance },
@@ -68,59 +69,150 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSid
 
     const visibleLinks = links.filter((l) => l.show);
 
+    // Get initials for avatar
+    const initials = userName
+        .split(/[\s_-]/)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase() ?? '')
+        .join('');
+
     return (
-        <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-10 box-border">
-            <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-                <div className="bg-primary p-2 rounded-lg">
-                    <School className="h-6 w-6 text-white" />
+        <aside
+            className="w-64 flex flex-col fixed h-full z-10 border-r"
+            style={{
+                backgroundColor: 'var(--sidebar)',
+                borderColor: 'var(--sidebar-border)',
+            }}
+        >
+            {/* Logo / School name */}
+            <div
+                className="flex items-center gap-3 px-5 h-16 border-b shrink-0"
+                style={{ borderColor: 'var(--sidebar-border)' }}
+            >
+                <div
+                    className="flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--sidebar-primary)', color: 'var(--sidebar-primary-foreground)' }}
+                >
+                    <School size={16} />
                 </div>
-                <div>
-                    <h2 className="text-sm font-bold text-white leading-tight" title={schoolName}>
+                <div className="flex flex-col min-w-0">
+                    <span
+                        className="text-sm font-bold leading-tight truncate"
+                        style={{ color: 'var(--sidebar-foreground)' }}
+                        title={schoolName}
+                    >
                         {schoolName}
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">{userRole || 'Staff'}</p>
+                    </span>
+                    <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: 'var(--sidebar-foreground)', opacity: 0.4 }}>
+                        {userRole || 'Staff'}
+                    </span>
                 </div>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            {/* Nav */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+                <p
+                    className="px-3 pt-1 pb-2 text-[10px] font-semibold uppercase tracking-widest"
+                    style={{ color: 'var(--sidebar-foreground)', opacity: 0.35 }}
+                >
                     Menu
                 </p>
-                {visibleLinks.map((link) => (
-                    <Link
-                        key={link.href}
-                        href={link.href}
-                        className={cn(
-                            'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors font-medium text-sm',
-                            isActive(link.href)
-                                ? 'bg-primary text-white shadow-sm'
-                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        )}
-                    >
-                        <link.icon size={18} />
-                        <span>{link.label}</span>
-                    </Link>
-                ))}
+                {visibleLinks.map((link) => {
+                    const active = isActive(link.href);
+                    return (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={cn(
+                                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                                active
+                                    ? 'shadow-sm'
+                                    : 'opacity-75 hover:opacity-100'
+                            )}
+                            style={
+                                active
+                                    ? {
+                                          backgroundColor: 'var(--sidebar-primary)',
+                                          color: 'var(--sidebar-primary-foreground)',
+                                      }
+                                    : {
+                                          color: 'var(--sidebar-foreground)',
+                                      }
+                            }
+                            onMouseEnter={(e) => {
+                                if (!active) {
+                                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--sidebar-accent)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!active) {
+                                    (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                                }
+                            }}
+                        >
+                            <link.icon size={16} className="shrink-0" />
+                            <span>{link.label}</span>
+                        </Link>
+                    );
+                })}
             </nav>
 
-            <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-                <div className="mb-3 px-4">
-                    <p className="text-sm font-medium text-white truncate">{userName}</p>
-                    <p className="text-xs text-slate-400 truncate">{userRole || 'Staff'}</p>
+            {/* Footer */}
+            <div
+                className="px-3 py-4 border-t space-y-1 shrink-0"
+                style={{ borderColor: 'var(--sidebar-border)' }}
+            >
+                {/* User info row */}
+                <div className="flex items-center gap-2 px-3 py-2">
+                    <div
+                        className="flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold"
+                        style={{
+                            backgroundColor: 'var(--sidebar-accent)',
+                            color: 'var(--sidebar-foreground)',
+                        }}
+                    >
+                        {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p
+                            className="text-xs font-semibold truncate"
+                            style={{ color: 'var(--sidebar-foreground)' }}
+                        >
+                            {userName}
+                        </p>
+                    </div>
+                    <ThemeToggle />
                 </div>
+
+                {/* Account & Logout */}
                 <Link
                     href="/school/settings/account"
-                    className={cn(
-                        'flex items-center space-x-3 px-4 py-2 w-full text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors font-medium text-sm mb-1',
-                        isActive('/school/settings/account') && 'bg-primary text-white',
-                    )}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium opacity-70 hover:opacity-100 transition-colors"
+                    style={{ color: 'var(--sidebar-foreground)' }}
+                    onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--sidebar-accent)';
+                    }}
+                    onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                    }}
                 >
-                    <UserCog size={18} />
+                    <UserCog size={16} className="shrink-0" />
                     <span>Account</span>
                 </Link>
                 <form action={logout}>
-                    <button className="flex items-center space-x-3 px-4 py-2 w-full text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors font-medium text-sm">
-                        <LogOut size={18} />
+                    <button
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors"
+                        style={{ color: 'oklch(0.65 0.2 25)', opacity: 0.8 }}
+                        onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.opacity = '1';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = 'oklch(0.3 0.1 25 / 0.2)';
+                        }}
+                        onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.opacity = '0.8';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                        }}
+                    >
+                        <LogOut size={16} className="shrink-0" />
                         <span>Sign out</span>
                     </button>
                 </form>

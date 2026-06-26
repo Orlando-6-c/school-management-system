@@ -2,7 +2,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { logout } from '@/actions/auth';
-import { LayoutDashboard, School, LogOut, Settings, ScrollText } from 'lucide-react';
+import { LayoutDashboard, School, LogOut, Settings, ScrollText, ShieldAlert } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export const runtime = 'nodejs';
 
@@ -17,64 +18,105 @@ export default async function AdminLayout({
         redirect('/login');
     }
 
+    const links = [
+        { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/admin/schools', label: 'Schools', icon: School },
+        { href: '/admin/audit-log', label: 'Audit Log', icon: ScrollText },
+        { href: '/admin/settings', label: 'Settings', icon: Settings },
+    ];
+
     return (
         <div className="min-h-screen bg-muted flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full">
-                <div className="p-6 border-b border-slate-800">
-                    <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                        SuperAdmin
-                    </h2>
+            <aside
+                className="w-64 flex flex-col fixed h-full z-10 border-r"
+                style={{
+                    backgroundColor: 'var(--sidebar)',
+                    borderColor: 'var(--sidebar-border)',
+                }}
+            >
+                {/* Header */}
+                <div
+                    className="flex items-center gap-3 px-5 h-16 border-b shrink-0"
+                    style={{ borderColor: 'var(--sidebar-border)' }}
+                >
+                    <div
+                        className="flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: 'oklch(0.55 0.22 250)', color: 'white' }}
+                    >
+                        <ShieldAlert size={16} />
+                    </div>
+                    <div>
+                        <span
+                            className="text-sm font-bold"
+                            style={{ color: 'var(--sidebar-foreground)' }}
+                        >
+                            Super Admin
+                        </span>
+                        <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--sidebar-foreground)', opacity: 0.4 }}>
+                            System
+                        </p>
+                    </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2">
-                    <Link
-                        href="/admin"
-                        className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
+                {/* Nav */}
+                <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+                    <p
+                        className="px-3 pt-1 pb-2 text-[10px] font-semibold uppercase tracking-widest"
+                        style={{ color: 'var(--sidebar-foreground)', opacity: 0.35 }}
                     >
-                        <LayoutDashboard size={20} />
-                        <span>Dashboard</span>
-                    </Link>
-
-                    <Link
-                        href="/admin/schools"
-                        className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
-                    >
-                        <School size={20} />
-                        <span>Schools</span>
-                    </Link>
-
-                    <Link
-                        href="/admin/audit-log"
-                        className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
-                    >
-                        <ScrollText size={20} />
-                        <span>Audit Log</span>
-                    </Link>
-
-                    <Link
-                        href="/admin/settings"
-                        className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
-                    >
-                        <Settings size={20} />
-                        <span>Settings</span>
-                    </Link>
+                        Admin
+                    </p>
+                    {links.map(({ href, label, icon: Icon }) => (
+                        <Link
+                            key={href}
+                            href={href}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium opacity-75 hover:opacity-100 transition-colors"
+                            style={{ color: 'var(--sidebar-foreground)' }}
+                            onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--sidebar-accent)';
+                            }}
+                            onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                            }}
+                        >
+                            <Icon size={16} className="shrink-0" />
+                            <span>{label}</span>
+                        </Link>
+                    ))}
                 </nav>
 
-                <div className="p-4 border-t border-slate-800">
+                {/* Footer */}
+                <div
+                    className="px-3 py-4 border-t space-y-1 shrink-0"
+                    style={{ borderColor: 'var(--sidebar-border)' }}
+                >
+                    <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-xs font-medium" style={{ color: 'var(--sidebar-foreground)', opacity: 0.6 }}>
+                            {session.username}
+                        </span>
+                        <ThemeToggle />
+                    </div>
                     <form action={logout}>
-                        <button className="flex items-center space-x-3 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg w-full transition-colors">
-                            <LogOut size={20} />
-                            <span>Logout</span>
+                        <button
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors"
+                            style={{ color: 'oklch(0.65 0.2 25)', opacity: 0.8 }}
+                            onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.opacity = '1';
+                                (e.currentTarget as HTMLElement).style.backgroundColor = 'oklch(0.3 0.1 25 / 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.opacity = '0.8';
+                                (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                            }}
+                        >
+                            <LogOut size={16} className="shrink-0" />
+                            <span>Sign out</span>
                         </button>
                     </form>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 ml-64 p-8">
-                {children}
-            </main>
+            <main className="flex-1 ml-64 p-8">{children}</main>
         </div>
     );
 }

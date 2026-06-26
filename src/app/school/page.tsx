@@ -1,9 +1,8 @@
 import { getSession } from '@/lib/session';
 import db from '@/lib/db';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, BookOpen, ArrowUpRight, ArrowDownRight, DollarSign, Plus } from 'lucide-react';
+import { GraduationCap, BookOpen, ArrowUpRight, ArrowDownRight, Banknote, Plus, ClipboardList, Users } from 'lucide-react';
 import { getIncomeRecords, getExpenseRecords } from '@/actions/finance';
 import { format } from 'date-fns';
 
@@ -56,7 +55,7 @@ export default async function SchoolDashboard() {
                             <ArrowUpRight className="h-4 w-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-foreground">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            <div className="text-2xl font-bold text-foreground">Rs {totalIncome.toLocaleString()}</div>
                             <p className="text-xs text-muted-foreground mt-1">All time income</p>
                         </CardContent>
                     </Card>
@@ -66,18 +65,18 @@ export default async function SchoolDashboard() {
                             <ArrowDownRight className="h-4 w-4 text-red-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-foreground">${totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            <div className="text-2xl font-bold text-foreground">Rs {totalExpense.toLocaleString()}</div>
                             <p className="text-xs text-muted-foreground mt-1">All time expenses</p>
                         </CardContent>
                     </Card>
                     <Card className={`border-l-4 shadow-sm ${netProfit >= 0 ? 'border-l-blue-500' : 'border-l-orange-500'}`}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground">Net Balance</CardTitle>
-                            <DollarSign className={`h-4 w-4 ${netProfit >= 0 ? 'text-blue-500' : 'text-orange-500'}`} />
+                            <Banknote className={`h-4 w-4 ${netProfit >= 0 ? 'text-blue-500' : 'text-orange-500'}`} />
                         </CardHeader>
                         <CardContent>
                             <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                                ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                Rs {netProfit.toLocaleString()}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">Available funds</p>
                         </CardContent>
@@ -112,7 +111,7 @@ export default async function SchoolDashboard() {
                                                 </div>
                                             </div>
                                             <div className={`font-semibold text-sm ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
-                                                {transaction.type === 'Income' ? '+' : '-'}${Number(transaction.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                {transaction.type === 'Income' ? '+' : '-'}Rs {Number(transaction.amount || 0).toLocaleString()}
                                             </div>
                                         </div>
                                     ))
@@ -125,18 +124,24 @@ export default async function SchoolDashboard() {
                         <CardHeader>
                             <CardTitle className="text-lg text-foreground">Quick Actions</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <Link href="/school/finance/income/new">
-                                <Button className="w-full justify-start bg-green-600 hover:bg-green-700 text-white">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add New Income
-                                </Button>
+                        <CardContent className="space-y-3">
+                            <Link href="/school/finance/income/new" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors">
+                                <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                                    <Plus className="h-4 w-4 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-foreground">Add Income</p>
+                                    <p className="text-xs text-muted-foreground">Record a new payment</p>
+                                </div>
                             </Link>
-                            <Link href="/school/finance/expense/new">
-                                <Button className="w-full justify-start bg-red-600 hover:bg-red-700 text-white">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Record New Expense
-                                </Button>
+                            <Link href="/school/finance/expense/new" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors">
+                                <div className="h-8 w-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                                    <ArrowDownRight className="h-4 w-4 text-red-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-foreground">Record Expense</p>
+                                    <p className="text-xs text-muted-foreground">Log a new expense</p>
+                                </div>
                             </Link>
                         </CardContent>
                     </Card>
@@ -150,35 +155,49 @@ export default async function SchoolDashboard() {
     // ----------------------------------------------------------------------
 
     // Fetch real counts
-    const studentCount = await db.student.count({ where: { schoolId: session.schoolId! } });
-    const teacherCount = await db.teacher.count({ where: { schoolId: session.schoolId! } });
-    const classCount = await db.class.count({ where: { schoolId: session.schoolId! } });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [studentCount, teacherCount, classCount, presentToday] = await Promise.all([
+        db.student.count({ where: { schoolId: session.schoolId!, isActive: true } }),
+        db.teacher.count({ where: { schoolId: session.schoolId!, isActive: true } }),
+        db.class.count({ where: { schoolId: session.schoolId!, isActive: true } }),
+        db.attendance.count({ where: { schoolId: session.schoolId!, date: { gte: today }, isPresent: true } }),
+    ]);
 
     const stats = [
         {
-            title: "Total Students",
+            title: 'Total Students',
             value: studentCount.toString(),
             icon: GraduationCap,
-            description: "Active students",
-            color: "text-blue-600",
-            bg: "bg-blue-50 dark:bg-blue-900/20"
+            description: 'Active enrolment',
+            color: 'text-blue-600',
+            bg: 'bg-blue-50 dark:bg-blue-900/20',
         },
         {
-            title: "Total Teachers",
+            title: 'Teaching Staff',
             value: teacherCount.toString(),
             icon: Users,
-            description: "Registered staff",
-            color: "text-emerald-600",
-            bg: "bg-emerald-50 dark:bg-emerald-900/20"
+            description: 'Active teachers',
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
         },
         {
-            title: "Active Classes",
+            title: 'Active Classes',
             value: classCount.toString(),
             icon: BookOpen,
-            description: "Current academic year",
-            color: "text-violet-600",
-            bg: "bg-violet-50 dark:bg-violet-900/20"
-        }
+            description: 'This academic year',
+            color: 'text-violet-600',
+            bg: 'bg-violet-50 dark:bg-violet-900/20',
+        },
+        {
+            title: 'Present Today',
+            value: presentToday.toString(),
+            icon: ClipboardList,
+            description: 'Attendance so far',
+            color: 'text-amber-600',
+            bg: 'bg-amber-50 dark:bg-amber-900/20',
+        },
     ];
 
     return (
@@ -195,7 +214,7 @@ export default async function SchoolDashboard() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {stats.map((stat, index) => (
                     <Card key={index} className="border-border shadow-sm hover:shadow-md transition-shadow duration-200">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -236,18 +255,42 @@ export default async function SchoolDashboard() {
                     <CardHeader>
                         <CardTitle className="text-lg text-foreground">Quick Actions</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Link href="/school/students/new">
-                            <Button className="w-full justify-start" variant="outline">
-                                <Users className="mr-2 h-4 w-4" />
-                                Admit New Student
-                            </Button>
+                    <CardContent className="space-y-3">
+                        <Link href="/school/students/new" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors group">
+                            <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                <GraduationCap className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-foreground">New Admission</p>
+                                <p className="text-xs text-muted-foreground">Add a student to the system</p>
+                            </div>
                         </Link>
-                        <Link href="/school/academics/promote">
-                            <Button className="w-full justify-start" variant="outline">
-                                <GraduationCap className="mr-2 h-4 w-4" />
-                                Promote Students
-                            </Button>
+                        <Link href="/school/attendance" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors group">
+                            <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                                <ClipboardList className="h-4 w-4 text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-foreground">Mark Attendance</p>
+                                <p className="text-xs text-muted-foreground">Record today&apos;s attendance</p>
+                            </div>
+                        </Link>
+                        <Link href="/school/finance/income/new" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors group">
+                            <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                                <ArrowUpRight className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-foreground">Record Income</p>
+                                <p className="text-xs text-muted-foreground">Log a payment or fee</p>
+                            </div>
+                        </Link>
+                        <Link href="/school/academics/promote" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors group">
+                            <div className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                <GraduationCap className="h-4 w-4 text-violet-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-foreground">Promote Students</p>
+                                <p className="text-xs text-muted-foreground">Move classes up a grade</p>
+                            </div>
                         </Link>
                     </CardContent>
                 </Card>
