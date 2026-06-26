@@ -1,40 +1,66 @@
 import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import { hasPermission } from '@/lib/authz';
 import db from '@/lib/db';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Plus, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus } from 'lucide-react';
+import { StudentTable } from '@/components/school/StudentTable';
+import { SearchBar } from '@/components/ui/search-bar';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 import PrintDirectoryButton from '@/components/school/PrintDirectoryButton';
-import { StudentTable } from '@/components/school/StudentTable'; // Import the new component
 import { serializeData } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
-export default async function StudentsPage() {
+const PAGE_SIZE = 50;
+
+export default async function StudentsPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ search?: string; class?: string; page?: string }>;
+}) {
     const session = await getSession();
+    if (!session.schoolId) redirect('/login');
+    if (!(await hasPermission('students', 'view'))) redirect('/school');
 
-    // 1. Fetch Students
-    const students = await db.student.findMany({
-        where: { schoolId: session.schoolId!, isActive: true }, // Filter only active students
-        include: {
-            class: true,
-            guardian: true,
-        },
-        orderBy: { createdAt: 'desc' },
-    });
+    const { search, class: classFilter, page: pageStr } = await searchParams;
+    const page = Math.max(1, parseInt(pageStr ?? '1', 10));
+    const skip = (page - 1) * PAGE_SIZE;
 
-    // 2. Fetch Classes for Filter
-    const classes = await db.class.findMany({
-        where: { schoolId: session.schoolId!, isActive: true },
-        orderBy: { gradeLevel: 'asc' }
-    });
+    const where: Record<string, unknown> = {
+        schoolId: session.schoolId,
+        isActive: true,
+        ...(classFilter && classFilter !== 'all' ? { classId: classFilter } : {}),
+        ...(search
+            ? {
+                  OR: [
+                      { name: { contains: search, mode: 'insensitive' } },
+                      { rollNumber: { contains: search, mode: 'insensitive' } },
+                  ],
+              }
+            : {}),
+    };
+
+    const [students, totalCount, classes] = await Promise.all([
+        db.student.findMany({
+            where,
+            include: { class: true, guardian: true },
+            orderBy: [{ class: { gradeLevel: 'asc' } }, { rollNumber: 'asc' }],
+            skip,
+            take: PAGE_SIZE,
+        }),
+        db.student.count({ where }),
+        db.class.findMany({
+            where: { schoolId: session.schoolId, isActive: true },
+            orderBy: { gradeLevel: 'asc' },
+        }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
     return (
         <div className="space-y-6">
@@ -42,35 +68,73 @@ export default async function StudentsPage() {
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">Student Directory</h1>
                 <div className="flex gap-2">
                     <PrintDirectoryButton classes={serializeData(classes)} />
-                    <Link href="/school/students/new">
-                        <Button>
+                    <Button asChild>
+                        <Link href="/school/students/new">
                             <Plus className="mr-2 h-4 w-4" />
                             New Admission
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </div>
             </div>
 
             <Card className="bg-card border-border shadow-sm print:shadow-none print:border-none">
                 <CardHeader className="print:hidden">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                             <CardTitle className="text-foreground">Enrolled Students</CardTitle>
                             <CardDescription>
-                                Total Students: {students.length}
+                                {totalCount} student{totalCount !== 1 ? 's' : ''}
+                                {search ? ` matching "${search}"` : ''}
+                                {classFilter && classFilter !== 'all'
+                                    ? ` in ${classes.find((c) => c.id === classFilter)?.name ?? 'class'}`
+                                    : ''}
                             </CardDescription>
                         </div>
-                        <div className="relative w-64">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by name, roll no..."
-                                className="pl-8 bg-card border-input"
-                            />
+                        <div className="flex gap-2 flex-wrap">
+                            {/* Class filter — client-side nav via form */}
+                            <form method="GET" className="flex gap-2">
+                                {search && <input type="hidden" name="search" value={search} />}
+                                <Select name="class" defaultValue={classFilter ?? 'all'}>
+                                    <SelectTrigger className="w-44">
+                                        <SelectValue placeholder="All classes" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All classes</SelectItem>
+                                        {classes.map((c) => (
+                                            <SelectItem key={c.id} value={c.id}>
+                                                {c.name} {c.section ? `(${c.section})` : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button type="submit" variant="outline" size="sm">Filter</Button>
+                                {classFilter && classFilter !== 'all' && (
+                                    <Button variant="ghost" size="sm" asChild>
+                                        <Link href={`/school/students${search ? `?search=${search}` : ''}`}>Clear</Link>
+                                    </Button>
+                                )}
+                            </form>
+                            {/* Search input — live URL update */}
+                            <Suspense>
+                                <SearchBar placeholder="Name or roll number…" className="w-56" />
+                            </Suspense>
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="print:p-0">
-                    <StudentTable students={serializeData(students)} session={serializeData(session)} classes={serializeData(classes)} />
+                <CardContent className="print:p-0 p-0">
+                    <StudentTable
+                        students={serializeData(students)}
+                        session={serializeData(session)}
+                        classes={serializeData(classes)}
+                    />
+                    <Suspense>
+                        <PaginationControls
+                            currentPage={page}
+                            totalPages={totalPages}
+                            totalCount={totalCount}
+                            pageSize={PAGE_SIZE}
+                        />
+                    </Suspense>
                 </CardContent>
             </Card>
         </div>
