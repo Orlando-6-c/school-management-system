@@ -85,8 +85,9 @@ model School {
   address   String?
   phone     String?
   email     String?
-  logo      String?
-  isActive  Boolean  @default(true)
+  logo             String?
+  feePaymentPolicy String?
+  isActive         Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -201,7 +202,6 @@ model Class {
   students           Student[]
   teacherAssignments TeacherClassAssignment[]
   attendances        Attendance[]
-  additionalCharges  AdditionalCharge[]
   timetables         Timetable[]
   homeworks          Homework[]
   studyMaterials     StudyMaterial[]
@@ -274,7 +274,6 @@ model Student {
   feeChallans       FeeChallan[]
   attendances       Attendance[]
   incomeRecords     IncomeRecord[]
-  additionalCharges AdditionalCharge[]
   user              User? // Reverse relation for Phase 1
   examResults       ExamResult[]
 
@@ -336,7 +335,8 @@ model Teacher {
   schoolId      String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  salary        Float?    @default(0) // Monthly salary amount
+  salary        Float?    @default(0)
+  salaryExtras  Json      @default("[]") // [{name: string, amount: number}] — positive=allowance, negative=deduction
 
   school            School           @relation(fields: [schoolId], references: [id])
   salaryStructureId String?
@@ -383,6 +383,8 @@ model Staff {
   gender       Gender
   role         String // Specific role within staff category
   workingHours String // e.g., "8 AM - 4 PM"
+  salary       Decimal? @default(0) @db.Decimal(10, 2)
+  salaryExtras Json     @default("[]") // [{name: string, amount: number}]
   photograph   String?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -564,10 +566,11 @@ model SalarySlip {
   deductions Decimal  @default(0) @db.Decimal(10, 2)
   bonuses    Decimal  @default(0) @db.Decimal(10, 2)
   netSalary  Decimal  @db.Decimal(10, 2)
-  paidAt     DateTime
+  status     String    @default("Pending")
+  paidAt     DateTime?
   remarks    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   // School isolation
   schoolId String
@@ -693,11 +696,9 @@ model AdditionalCharge {
   applicableMonths String[] // e.g., ["January", "February"]
   incomeCategory   IncomeCategory // Links to an existing IncomeCategory enum
 
-  // Who the charge is applied to
-  studentId String?
-  student   Student? @relation(fields: [studentId], references: [id])
-  classId   String?
-  class     Class?   @relation(fields: [classId], references: [id])
+  // Who the charge is applied to (empty arrays = applies to all students)
+  studentIds String[] @default([])
+  classIds   String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -706,8 +707,6 @@ model AdditionalCharge {
   feeChallanItems AdditionalChargeItem[]
 
   @@index([schoolId])
-  @@index([studentId])
-  @@index([classId])
 }
 
 model AdditionalChargeItem {

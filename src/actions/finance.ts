@@ -93,6 +93,314 @@ export async function addIncome(prevState: IncomeState | undefined, formData: Fo
     }
 }
 
+export async function deleteIncomeRecord(id: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('payments', 'delete'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const record = await db.incomeRecord.findUnique({ where: { id, schoolId: session.schoolId } });
+        if (!record) return { success: false, message: 'Record not found' };
+        if (record.isAutomatic) return { success: false, message: 'Auto-generated records cannot be deleted manually.' };
+        await db.incomeRecord.delete({ where: { id, schoolId: session.schoolId } });
+        revalidatePath('/school/finance');
+        revalidatePath('/school/finance/income');
+        return { success: true, message: 'Income record deleted.' };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to delete record.' };
+    }
+}
+
+export async function deleteExpenseRecord(id: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('expenses', 'delete'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const record = await db.expenseRecord.findUnique({ where: { id, schoolId: session.schoolId } });
+        if (!record) return { success: false, message: 'Record not found' };
+        if (record.isAutomatic) return { success: false, message: 'Auto-generated records cannot be deleted manually.' };
+        await db.expenseRecord.delete({ where: { id, schoolId: session.schoolId } });
+        revalidatePath('/school/finance');
+        revalidatePath('/school/finance/expense');
+        return { success: true, message: 'Expense record deleted.' };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to delete record.' };
+    }
+}
+
+export async function getChallans(filters?: { classId?: string; month?: string; year?: number; status?: string }) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'view'))) return [];
+    try {
+        const where: any = { schoolId: session.schoolId };
+        if (filters?.classId) where.student = { classId: filters.classId };
+        if (filters?.month) where.month = filters.month;
+        if (filters?.year) where.year = filters.year;
+        if (filters?.status && filters.status !== 'all') where.status = filters.status;
+        const challans = await db.feeChallan.findMany({
+            where,
+            include: {
+                student: { select: { id: true, name: true, rollNumber: true, class: { select: { id: true, name: true, section: true } } } },
+            },
+            orderBy: [{ year: 'desc' }, { month: 'asc' }, { createdAt: 'desc' }],
+        });
+        return serialize(challans);
+    } catch (e: any) {
+        console.error('getChallans error:', e);
+        return [];
+    }
+}
+
+export async function getBulkChallans(params: {
+    studentIds?: string[];
+    classIds?: string[];
+    month?: string;
+    year?: number;
+    status?: string;
+}) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'view'))) return [];
+    try {
+        const orClauses: any[] = [];
+        if (params.studentIds?.length) orClauses.push({ studentId: { in: params.studentIds } });
+        if (params.classIds?.length) orClauses.push({ student: { classId: { in: params.classIds } } });
+        if (!orClauses.length) return [];
+
+        const where: any = {
+            schoolId: session.schoolId,
+            OR: orClauses,
+        };
+        if (params.month) where.month = params.month;
+        if (params.year) where.year = params.year;
+        if (params.status && params.status !== 'all') where.status = params.status;
+
+        const challans = await db.feeChallan.findMany({
+            where,
+            include: {
+                student: {
+                    include: {
+                        class: { select: { name: true, section: true } },
+                        guardian: { select: { name: true } },
+                    },
+                },
+                feeBreakdown: { orderBy: { id: 'asc' } },
+            },
+            orderBy: [{ student: { class: { name: 'asc' } } }, { student: { name: 'asc' } }],
+        });
+        return serialize(challans.map(c => ({
+            ...c,
+            totalAmount: Number(c.totalAmount),
+            paidAmount: Number(c.paidAmount),
+            feeBreakdown: c.feeBreakdown.map(i => ({ ...i, amount: Number(i.amount) })),
+        })));
+    } catch (e: any) {
+        console.error('getBulkChallans error:', e);
+        return [];
+    }
+}
+
+export async function markChallanPaid(challanId: string, paidAmount: number, paymentMethod: string, paidAt: Date) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const challan = await db.feeChallan.findUnique({
+            where: { id: challanId, schoolId: session.schoolId },
+            include: { student: true },
+        });
+        if (!challan) return { success: false, message: 'Challan not found.' };
+        if (challan.status === 'Paid') return { success: false, message: 'Challan is already fully paid.' };
+
+        const totalAmount = Number(challan.totalAmount);
+        const alreadyPaid = Number(challan.paidAmount);
+        const newTotalPaid = alreadyPaid + paidAmount;
+        const isFullyPaid = newTotalPaid >= totalAmount;
+
+        await db.$transaction(async (tx) => {
+            await tx.feeChallan.update({
+                where: { id: challanId },
+                data: {
+                    status: isFullyPaid ? 'Paid' : 'Pending',
+                    paidAmount: newTotalPaid,
+                    paidAt: isFullyPaid ? paidAt : null,
+                },
+            });
+            await tx.incomeRecord.create({
+                data: {
+                    schoolId: session.schoolId!,
+                    transactionId: `INC-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
+                    description: `Fee payment — ${challan.student.name} (${challan.month} ${challan.year}) Challan ${challan.challanNumber}${!isFullyPaid ? ` [partial: Rs ${paidAmount}]` : ''}`,
+                    amount: paidAmount,
+                    category: IncomeCategory.Fee,
+                    source: 'Student Fees',
+                    paymentMethod,
+                    date: paidAt,
+                    studentId: challan.studentId,
+                    reference: challan.challanNumber,
+                    isAutomatic: true,
+                    feeChallans: { connect: { id: challanId } },
+                },
+            });
+        });
+        revalidatePath('/school/finance/challan');
+        revalidatePath('/school/finance');
+        return {
+            success: true,
+            isFullyPaid,
+            challanId,
+            challanNumber: challan.challanNumber,
+            message: isFullyPaid
+                ? `Challan ${challan.challanNumber} fully paid.`
+                : `Partial payment of Rs ${paidAmount} recorded. Remaining: Rs ${(totalAmount - newTotalPaid).toFixed(0)}.`,
+        };
+    } catch (e: any) {
+        console.error('markChallanPaid error:', e);
+        return { success: false, message: 'Failed to mark challan as paid.' };
+    }
+}
+
+export async function cancelChallan(challanId: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        await db.feeChallan.update({
+            where: { id: challanId, schoolId: session.schoolId },
+            data: { status: 'Cancelled' },
+        });
+        revalidatePath('/school/finance/challan');
+        return { success: true, message: 'Challan cancelled.' };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to cancel challan.' };
+    }
+}
+
+export async function getChallanForEdit(challanId: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'view'))) return null;
+    try {
+        const challan = await db.feeChallan.findUnique({
+            where: { id: challanId, schoolId: session.schoolId },
+            include: {
+                student: {
+                    select: {
+                        name: true, rollNumber: true,
+                        class: { select: { name: true, section: true } },
+                    },
+                },
+                feeBreakdown: { orderBy: { id: 'asc' } },
+            },
+        });
+        if (!challan) return null;
+        return serialize({
+            ...challan,
+            amount: Number(challan.amount),
+            totalAmount: Number(challan.totalAmount),
+            discount: Number(challan.discount),
+            paidAmount: Number(challan.paidAmount),
+            feeBreakdown: challan.feeBreakdown.map(i => ({ ...i, amount: Number(i.amount) })),
+        });
+    } catch {
+        return null;
+    }
+}
+
+export async function addChallanLineItem(challanId: string, description: string, amount: number) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    if (!description.trim() || amount <= 0) {
+        return { success: false, message: 'Description and a positive amount are required.' };
+    }
+    try {
+        const challan = await db.feeChallan.findUnique({
+            where: { id: challanId, schoolId: session.schoolId },
+            select: { status: true, totalAmount: true },
+        });
+        if (!challan) return { success: false, message: 'Challan not found.' };
+        if (challan.status === 'Paid' || challan.status === 'Cancelled') {
+            return { success: false, message: 'Cannot edit a Paid or Cancelled challan.' };
+        }
+        const item = await db.$transaction(async (tx) => {
+            const newItem = await tx.feeBreakdownItem.create({
+                data: { feeChallanId: challanId, description: description.trim(), amount },
+            });
+            await tx.feeChallan.update({
+                where: { id: challanId },
+                data: { totalAmount: { increment: amount } },
+            });
+            return newItem;
+        });
+        revalidatePath(`/school/finance/challan/${challanId}/edit`);
+        revalidatePath('/school/finance/challan');
+        return { success: true, item: serialize({ ...item, amount: Number(item.amount) }) };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to add line item.' };
+    }
+}
+
+export async function removeChallanLineItem(challanId: string, itemId: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const challan = await db.feeChallan.findUnique({
+            where: { id: challanId, schoolId: session.schoolId },
+            select: { status: true },
+        });
+        if (!challan) return { success: false, message: 'Challan not found.' };
+        if (challan.status === 'Paid' || challan.status === 'Cancelled') {
+            return { success: false, message: 'Cannot edit a Paid or Cancelled challan.' };
+        }
+        const item = await db.feeBreakdownItem.findUnique({ where: { id: itemId } });
+        if (!item || item.feeChallanId !== challanId) return { success: false, message: 'Item not found.' };
+
+        await db.$transaction(async (tx) => {
+            await tx.feeBreakdownItem.delete({ where: { id: itemId } });
+            await tx.feeChallan.update({
+                where: { id: challanId },
+                data: { totalAmount: { decrement: Number(item.amount) } },
+            });
+        });
+        revalidatePath(`/school/finance/challan/${challanId}/edit`);
+        revalidatePath('/school/finance/challan');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to remove line item.' };
+    }
+}
+
+export async function updateChallanDetails(challanId: string, dueDate: Date, remarks: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const challan = await db.feeChallan.findUnique({
+            where: { id: challanId, schoolId: session.schoolId },
+            select: { status: true },
+        });
+        if (!challan) return { success: false, message: 'Challan not found.' };
+        if (challan.status === 'Paid' || challan.status === 'Cancelled') {
+            return { success: false, message: 'Cannot edit a Paid or Cancelled challan.' };
+        }
+        await db.feeChallan.update({
+            where: { id: challanId },
+            data: { dueDate, remarks: remarks.trim() || null },
+        });
+        revalidatePath(`/school/finance/challan/${challanId}/edit`);
+        revalidatePath('/school/finance/challan');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to update challan.' };
+    }
+}
+
 export async function getIncomeRecords() {
     const session = await getSession();
     if (!session.schoolId || !(await hasPermission('payments', 'view'))) {
@@ -304,23 +612,21 @@ export async function calculateStudentFeeBreakdown(
             AND: [
                 {
                     OR: [
-                        { studentId: student.id }, // Charges specific to this student
-                        { classId: student.class?.id }, // Charges specific to this student's class
-                        { studentId: null, classId: null }, // Global charges
+                        { studentIds: { has: student.id } },
+                        ...(student.class?.id ? [{ classIds: { has: student.class.id } }] : []),
+                        { studentIds: { isEmpty: true }, classIds: { isEmpty: true } }, // Global charges
                     ],
                 },
                 {
-                    type: 'OneTime', // For now, only one-time charges apply to monthly challans
-                    applicableMonths: { has: month }, // Check if charge applies to this month
+                    applicableMonths: { has: month },
                 }
             ],
-            // Ensure charge has not been applied to a challan for this student for this month already
             feeChallanItems: {
                 none: {
                     feeChallan: {
                         studentId: student.id,
                         month: month,
-                        status: { not: 'Cancelled' } // Don't count if already on a non-cancelled challan
+                        status: { not: 'Cancelled' }
                     }
                 }
             }
@@ -608,10 +914,10 @@ const additionalChargeSchema = z.object({
     name: z.string().min(1, 'Charge name is required'),
     type: z.nativeEnum(ChargeType),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
-    applicableMonths: z.array(z.string()).optional(), // Array of month names
+    applicableMonths: z.array(z.string()).optional(),
     incomeCategory: z.nativeEnum(IncomeCategory),
-    studentId: z.string().optional().or(z.literal('')),
-    classId: z.string().optional().or(z.literal('')),
+    studentIds: z.array(z.string()).optional(),
+    classIds: z.array(z.string()).optional(),
 });
 
 export type AdditionalChargeState = {
@@ -627,35 +933,16 @@ export async function addAdditionalCharge(prevState: AdditionalChargeState | und
     }
 
     const rawData: any = Object.fromEntries(formData);
-    // Ensure applicableMonths is an array, even if empty or single string
-    const applicableMonths = formData.getAll('applicableMonths');
-    if (applicableMonths.length === 0) {
-        // If no months selected and it's a recurring charge, this is an issue.
-        // For now, let's just ensure it's an array.
-        rawData.applicableMonths = [];
-    } else {
-        rawData.applicableMonths = applicableMonths;
-    }
+    rawData.applicableMonths = formData.getAll('applicableMonths');
+    rawData.studentIds = formData.getAll('studentIds');
+    rawData.classIds = formData.getAll('classIds');
 
     const result = additionalChargeSchema.safeParse(rawData);
-
     if (!result.success) {
-        console.error("Validation Error:", result.error.flatten().fieldErrors);
-        return {
-            errors: result.error.flatten().fieldErrors,
-            message: 'Validation failed.'
-        };
+        return { errors: result.error.flatten().fieldErrors, message: 'Validation failed.' };
     }
 
     const data = result.data;
-
-    // Logic to ensure either studentId, classId, or neither (global) is set.
-    // Cannot be both studentId and classId for a single charge definition.
-    if (data.studentId && data.classId) {
-        return { success: false, message: 'Additional charge cannot be applied to both a specific student and a specific class at the same time.' };
-    }
-
-
     try {
         await db.additionalCharge.create({
             data: {
@@ -665,16 +952,33 @@ export async function addAdditionalCharge(prevState: AdditionalChargeState | und
                 amount: data.amount,
                 applicableMonths: data.applicableMonths || [],
                 incomeCategory: data.incomeCategory,
-                studentId: data.studentId || null,
-                classId: data.classId || null,
+                studentIds: data.studentIds || [],
+                classIds: data.classIds || [],
             }
         });
-
-        revalidatePath('/school/finance/charges'); // New path for charges
+        revalidatePath('/school/finance/charges');
         return { success: true, message: 'Additional charge added successfully.' };
     } catch (error: any) {
         console.error('Add Additional Charge Error:', error);
         return { success: false, message: 'Failed to add additional charge.' };
+    }
+}
+
+export async function deleteAdditionalCharge(id: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('fees', 'delete'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const inUse = await db.additionalChargeItem.count({ where: { additionalChargeId: id } });
+        if (inUse > 0) {
+            return { success: false, message: 'This charge is already linked to one or more challans and cannot be deleted.' };
+        }
+        await db.additionalCharge.delete({ where: { id, schoolId: session.schoolId } });
+        revalidatePath('/school/finance/charges');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to delete additional charge.' };
     }
 }
 
@@ -685,27 +989,32 @@ export async function getAdditionalCharges() {
     }
 
     try {
-        const additionalCharges = await db.additionalCharge.findMany({
+        const charges = await db.additionalCharge.findMany({
             where: { schoolId: session.schoolId },
-            include: {
-                student: {
-                    select: {
-                        id: true,
-                        name: true,
-                        rollNumber: true,
-                    },
-                },
-                class: {
-                    select: {
-                        id: true,
-                        name: true,
-                        section: true,
-                    },
-                },
-            },
             orderBy: { createdAt: 'desc' },
         });
-        return serialize(additionalCharges);
+
+        // Batch-resolve student/class names from the ID arrays
+        const allStudentIds = [...new Set(charges.flatMap(c => c.studentIds))];
+        const allClassIds = [...new Set(charges.flatMap(c => c.classIds))];
+        const [students, classes] = await Promise.all([
+            allStudentIds.length > 0
+                ? db.student.findMany({ where: { id: { in: allStudentIds } }, select: { id: true, name: true, rollNumber: true } })
+                : [],
+            allClassIds.length > 0
+                ? db.class.findMany({ where: { id: { in: allClassIds } }, select: { id: true, name: true, section: true } })
+                : [],
+        ]);
+        const studentMap = Object.fromEntries(students.map(s => [s.id, s]));
+        const classMap = Object.fromEntries(classes.map(c => [c.id, c]));
+
+        const enriched = charges.map(c => ({
+            ...c,
+            amount: Number(c.amount),
+            resolvedStudents: c.studentIds.map(id => studentMap[id]).filter(Boolean),
+            resolvedClasses: c.classIds.map(id => classMap[id]).filter(Boolean),
+        }));
+        return serialize(enriched);
     } catch (error: any) {
         console.error('Get Additional Charges Error:', error);
         return [];
@@ -1018,27 +1327,140 @@ export async function generateBulkSalarySlips(
     return { success: true, message: 'Bulk salary slip generation process completed.', results };
 }
 
-export async function getSalarySlips() {
+export async function getSalarySlips(month?: string, year?: number) {
     const session = await getSession();
-    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
-        return []; // Return empty array if unauthorized or no schoolId
-    }
-
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) return [];
     try {
+        const where: any = { schoolId: session.schoolId };
+        if (month) where.month = month;
+        if (year) where.year = year;
         const salarySlips = await db.salarySlip.findMany({
-            where: { schoolId: session.schoolId },
+            where,
             include: {
                 teacher: { select: { firstName: true, lastName: true, id: true } },
                 staff: { select: { name: true, id: true } },
                 executive: { select: { name: true, id: true } },
                 expenseRecord: { select: { transactionId: true } },
             },
-            orderBy: { paidAt: 'desc' },
+            orderBy: { createdAt: 'desc' },
         });
         return serialize(salarySlips);
     } catch (error: any) {
         console.error('Get Salary Slips Error:', error);
         return [];
+    }
+}
+
+export async function generateMonthlySalarySlips(month: string, year: number) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('salaries', 'create'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const [teachers, staff] = await Promise.all([
+            db.teacher.findMany({ where: { schoolId: session.schoolId, isActive: true } }),
+            db.staff.findMany({ where: { schoolId: session.schoolId, isActive: true } }),
+        ]);
+
+        const slips: any[] = [];
+        let skipped = 0;
+
+        const processEmployee = async (emp: any, type: EmployeeRole, empId: string, nameKey: string) => {
+            const base = Number(emp.salary ?? 0);
+            if (base <= 0) return; // skip employees with no salary set
+
+            const existing = await db.salarySlip.findFirst({
+                where: { schoolId: session.schoolId!, month, year, employeeType: type, ...(type === 'Teacher' ? { teacherId: empId } : { staffId: empId }) },
+            });
+            if (existing) { skipped++; return; }
+
+            const extras: { name: string; amount: number }[] = Array.isArray(emp.salaryExtras) ? emp.salaryExtras : [];
+            const allowances = extras.filter(e => e.amount > 0).reduce((s, e) => s + e.amount, 0);
+            const deductions = extras.filter(e => e.amount < 0).reduce((s, e) => s + Math.abs(e.amount), 0);
+            const netSalary = base + allowances - deductions;
+
+            const slipNumber = `SAL-${year}-${month.substring(0, 3).toUpperCase()}-${type.substring(0, 1)}-${Date.now().toString(36).toUpperCase()}`;
+
+            slips.push({
+                schoolId: session.schoolId!,
+                slipNumber,
+                month,
+                year,
+                baseSalary: base,
+                allowances,
+                deductions,
+                bonuses: 0,
+                netSalary,
+                status: 'Pending',
+                employeeType: type,
+                ...(type === 'Teacher' ? { teacherId: empId } : { staffId: empId }),
+                remarks: extras.length ? extras.map(e => `${e.name}: Rs ${e.amount}`).join(', ') : null,
+            });
+        };
+
+        for (const t of teachers) await processEmployee(t, 'Teacher', t.id, 'teacher');
+        for (const s of staff) await processEmployee(s, 'Staff', s.id, 'staff');
+
+        if (!slips.length) {
+            return { success: false, message: skipped > 0 ? `All slips already exist for ${month} ${year}.` : 'No employees with a salary set.' };
+        }
+
+        await db.salarySlip.createMany({ data: slips });
+        revalidatePath('/school/finance/salary-slips');
+        return { success: true, message: `Generated ${slips.length} salary slip(s) for ${month} ${year}. ${skipped > 0 ? `${skipped} already existed.` : ''}` };
+    } catch (e: any) {
+        console.error('generateMonthlySalarySlips error:', e);
+        return { success: false, message: 'Failed to generate salary slips.' };
+    }
+}
+
+export async function markSalarySlipPaid(slipId: string, paidAt: Date) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('salaries', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const slip = await db.salarySlip.findUnique({
+            where: { id: slipId, schoolId: session.schoolId },
+            include: {
+                teacher: { select: { firstName: true, lastName: true } },
+                staff: { select: { name: true } },
+            },
+        });
+        if (!slip) return { success: false, message: 'Salary slip not found.' };
+        if (slip.status === 'Paid') return { success: false, message: 'Already marked as paid.' };
+
+        const employeeName = slip.teacher
+            ? `${slip.teacher.firstName} ${slip.teacher.lastName}`
+            : slip.staff?.name ?? 'Unknown';
+
+        await db.$transaction(async (tx) => {
+            const expense = await tx.expenseRecord.create({
+                data: {
+                    schoolId: session.schoolId!,
+                    transactionId: `EXP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
+                    description: `Salary — ${employeeName} (${slip.month} ${slip.year})`,
+                    amount: Number(slip.netSalary),
+                    category: ExpenseCategory.Salary,
+                    paidTo: employeeName,
+                    paymentMethod: 'Bank Transfer',
+                    date: paidAt,
+                    reference: slip.slipNumber,
+                    isAutomatic: true,
+                },
+            });
+            await tx.salarySlip.update({
+                where: { id: slipId },
+                data: { status: 'Paid', paidAt, expenseRecordId: expense.id },
+            });
+        });
+
+        revalidatePath('/school/finance/salary-slips');
+        revalidatePath('/school/finance');
+        return { success: true, message: `Salary paid for ${employeeName} — ${slip.month} ${slip.year}.` };
+    } catch (e: any) {
+        console.error('markSalarySlipPaid error:', e);
+        return { success: false, message: 'Failed to mark salary as paid.' };
     }
 }
 export async function getTeachersForFinance() {

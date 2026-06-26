@@ -36,6 +36,8 @@ export default async function EditStaffPage({ params }: { params: Promise<{ id: 
                             gender: staff.gender as 'Male' | 'Female',
                             role: staff.role,
                             workingHours: staff.workingHours,
+                            salary: Number(staff.salary ?? 0),
+                            salaryExtras: Array.isArray(staff.salaryExtras) ? staff.salaryExtras as any : [],
                             photograph: staff.photograph ?? '',
                         }}
                     />

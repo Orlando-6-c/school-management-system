@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { addTeacher, updateTeacher, TeacherState } from '@/actions/teacher';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
+
+interface Extra { name: string; amount: string }
 
 const initialState: TeacherState = {
     message: '',
@@ -19,11 +21,8 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
     const action = initialData ? updateTeacher.bind(null, initialData.id) : addTeacher;
 
-    // Use all 3 return values — isPending replaces the old manual setPending state
     const [state, formAction, isPending] = useActionState(action, initialState);
 
-    // Controlled state preserves user input when the server action returns validation errors.
-    // React 19 resets uncontrolled (defaultValue) inputs after any form action completes.
     const [form, setForm] = useState({
         firstName: initialData?.firstName ?? '',
         lastName: initialData?.lastName ?? '',
@@ -42,6 +41,24 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
         address: initialData?.address ?? '',
     });
 
+    const [extras, setExtras] = useState<Extra[]>(
+        (Array.isArray(initialData?.salaryExtras) ? initialData.salaryExtras : []).map((e: any) => ({
+            name: e.name,
+            amount: e.amount.toString(),
+        }))
+    );
+
+    function addExtra() { setExtras(prev => [...prev, { name: '', amount: '' }]); }
+    function removeExtra(idx: number) { setExtras(prev => prev.filter((_, i) => i !== idx)); }
+    function updateExtra(idx: number, field: 'name' | 'amount', value: string) {
+        setExtras(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+    }
+
+    const serializedExtras = JSON.stringify(
+        extras.filter(e => e.name.trim() && e.amount !== '')
+              .map(e => ({ name: e.name.trim(), amount: parseFloat(e.amount) || 0 }))
+    );
+
     useEffect(() => {
         if (state?.success) {
             router.push('/school/teachers');
@@ -56,6 +73,7 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
 
     return (
         <form action={formAction}>
+            <input type="hidden" name="salaryExtras" value={serializedExtras} />
             <div className="grid gap-6">
                 {/* Profile Section */}
                 <Card className="border-border">
@@ -131,10 +149,47 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="salary">Monthly Salary</Label>
-                            <Input id="salary" name="salary" type="number" value={form.salary} onChange={field('salary')} required />
+                        <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="salary">Base Monthly Salary (Rs)</Label>
+                            <Input id="salary" name="salary" type="number" min="0" value={form.salary} onChange={field('salary')} required />
                             {state?.errors?.salary && <p className="text-red-500 text-xs">{state.errors.salary}</p>}
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <Label className="text-sm font-medium">Salary Extras / Deductions</Label>
+                            <div className="space-y-2">
+                                {extras.map((extra, idx) => (
+                                    <div key={idx} className="flex gap-2 items-center">
+                                        <Input
+                                            placeholder="e.g. Transport Allowance"
+                                            value={extra.name}
+                                            onChange={e => updateExtra(idx, 'name', e.target.value)}
+                                            className="flex-1 h-8 text-sm"
+                                        />
+                                        <Input
+                                            type="number"
+                                            placeholder="Amount (positive or negative)"
+                                            value={extra.amount}
+                                            onChange={e => updateExtra(idx, 'amount', e.target.value)}
+                                            className="w-44 h-8 text-sm"
+                                        />
+                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeExtra(idx)}>
+                                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addExtra}>
+                                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Extra / Deduction
+                                </Button>
+                                {extras.filter(e => e.name && e.amount !== '').length > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Net salary: Rs {(
+                                            parseFloat(form.salary || '0') +
+                                            extras.filter(e => e.name && e.amount !== '').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+                                        ).toLocaleString('en-PK')}
+                                    </p>
+                                )}
+                                <p className="text-xs text-muted-foreground">Positive = allowance, negative = deduction (e.g. -500 for a penalty).</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

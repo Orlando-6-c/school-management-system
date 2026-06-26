@@ -18,17 +18,17 @@ export function SchoolShell({ schoolName, schoolSlug, userName, userRole, nav, c
 
     return (
         <div className="min-h-screen bg-muted">
-            {/* Mobile overlay */}
+            {/* Mobile overlay — hidden on print */}
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/60 z-20 md:hidden"
+                    className="fixed inset-0 bg-black/60 z-20 md:hidden print:hidden"
                     onClick={() => setSidebarOpen(false)}
                 />
             )}
 
-            {/* Sidebar wrapper — always visible on md+, slide-in on mobile */}
+            {/* Sidebar — hidden on print */}
             <div
-                className={`fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
+                className={`fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:translate-x-0 print:hidden ${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
@@ -42,9 +42,9 @@ export function SchoolShell({ schoolName, schoolSlug, userName, userRole, nav, c
                 />
             </div>
 
-            {/* Mobile top bar */}
+            {/* Mobile top bar — hidden on print */}
             <header
-                className="fixed top-0 left-0 right-0 h-14 flex items-center px-4 gap-3 border-b md:hidden z-10"
+                className="fixed top-0 left-0 right-0 h-14 flex items-center px-4 gap-3 border-b md:hidden z-10 print:hidden"
                 style={{ backgroundColor: 'var(--sidebar)', borderColor: 'var(--sidebar-border)' }}
             >
                 <button
@@ -74,9 +74,9 @@ export function SchoolShell({ schoolName, schoolSlug, userName, userRole, nav, c
                 </div>
             </header>
 
-            {/* Main content */}
-            <main className="md:ml-64 pt-14 md:pt-0 min-h-screen">
-                <div className="p-6 md:p-8">{children}</div>
+            {/* Main content — full width with no offset on print */}
+            <main className="md:ml-64 pt-14 md:pt-0 min-h-screen print:ml-0 print:pt-0">
+                <div className="p-6 md:p-8 print:p-0">{children}</div>
             </main>
         </div>
     );

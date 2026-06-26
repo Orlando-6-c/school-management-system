@@ -228,11 +228,20 @@ export async function getSchoolSettings() {
             return null;
         }
 
-        const bankAccounts = await (db as any).bankAccount.findMany({ where: { schoolId: session.schoolId } });
+        const [bankAccounts, policyRows] = await Promise.all([
+            (db as any).bankAccount.findMany({
+                where: { schoolId: session.schoolId },
+                orderBy: { isDefault: 'desc' },
+            }),
+            db.$queryRaw<{ feePaymentPolicy: string | null }[]>`
+                SELECT "feePaymentPolicy" FROM "School" WHERE id = ${session.schoolId}
+            `,
+        ]);
 
         return {
             name: school.name,
             logo: school.logo,
+            feePaymentPolicy: policyRows[0]?.feePaymentPolicy ?? null,
             currency: school.currencyConfigurations[0] || null,
             bankAccounts: bankAccounts,
             currentFinancialYear: school.financialYears[0] || null,
@@ -240,6 +249,23 @@ export async function getSchoolSettings() {
     } catch (error: any) {
         console.error('Get School Settings Error:', error);
         return null;
+    }
+}
+
+export async function updateFeePaymentPolicy(policy: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) {
+        return { success: false, message: 'Access Denied' };
+    }
+    try {
+        const value = policy.trim() || null;
+        await db.$executeRaw`
+            UPDATE "School" SET "feePaymentPolicy" = ${value} WHERE id = ${session.schoolId}
+        `;
+        revalidatePath('/school/settings');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, message: 'Failed to save policy.' };
     }
 }
 

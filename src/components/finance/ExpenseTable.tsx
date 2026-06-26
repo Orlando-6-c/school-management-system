@@ -1,73 +1,183 @@
-// src/components/finance/ExpenseTable.tsx
 'use client';
 
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { useState, useMemo, useTransition } from 'react';
 import { format } from 'date-fns';
-import { ExpenseCategory } from '@prisma/client';
+import { deleteExpenseRecord } from '@/actions/finance';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Trash2 } from 'lucide-react';
 
-// Define the structure of an expense record
+const CATEGORIES = ['All', 'Salary', 'Utilities', 'Supplies', 'Maintenance', 'Other'];
+const MONTHS = ['All','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function fmt(n: number) {
+    return 'Rs ' + n.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 interface ExpenseRecord {
     id: string;
     transactionId: string;
     description: string;
     amount: number;
-    category: ExpenseCategory;
+    category: string;
     paidTo: string;
     paymentMethod: string;
-    date: Date;
+    date: string;
     isAutomatic: boolean;
-    createdAt: Date;
 }
 
-interface ExpenseTableProps {
-    expenseRecords: ExpenseRecord[];
-}
+export default function ExpenseTable({ expenseRecords }: { expenseRecords: ExpenseRecord[] }) {
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('All');
+    const [month, setMonth] = useState('All');
+    const [year, setYear] = useState('All');
+    const [deleting, setDeleting] = useState<string | null>(null);
+    const [isPending, startTransition] = useTransition();
+    const [localRecords, setLocalRecords] = useState(expenseRecords);
 
-export default function ExpenseTable({ expenseRecords }: ExpenseTableProps) {
+    const years = useMemo(() => {
+        const ys = [...new Set(localRecords.map((r) => new Date(r.date).getFullYear().toString()))].sort((a, b) => Number(b) - Number(a));
+        return ['All', ...ys];
+    }, [localRecords]);
+
+    const filtered = useMemo(() => {
+        return localRecords.filter((r) => {
+            const q = search.toLowerCase();
+            if (q && !r.description?.toLowerCase().includes(q) && !r.paidTo?.toLowerCase().includes(q) && !r.transactionId?.toLowerCase().includes(q)) return false;
+            if (category !== 'All' && r.category !== category) return false;
+            const d = new Date(r.date);
+            if (month !== 'All' && d.toLocaleString('default', { month: 'long' }) !== month) return false;
+            if (year !== 'All' && d.getFullYear().toString() !== year) return false;
+            return true;
+        });
+    }, [localRecords, search, category, month, year]);
+
+    const total = filtered.reduce((s, r) => s + Number(r.amount), 0);
+
+    function handleDelete(id: string) {
+        if (!confirm('Delete this expense record? This cannot be undone.')) return;
+        setDeleting(id);
+        startTransition(async () => {
+            const res = await deleteExpenseRecord(id);
+            if (res.success) {
+                setLocalRecords((prev) => prev.filter((r) => r.id !== id));
+            } else {
+                alert(res.message);
+            }
+            setDeleting(null);
+        });
+    }
+
     return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Paid To</TableHead>
-                    <TableHead>Payment Method</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {expenseRecords.length === 0 ? (
-                    <TableRow>
-                        <TableCell colSpan={7} className="text-center py-12">
-                            <div className="flex flex-col items-center gap-2">
-                                <p className="text-muted-foreground text-sm">No expense records found.</p>
-                                <p className="text-gray-400 text-xs">Add your first expense record to get started.</p>
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                ) : (
-                    expenseRecords.map((record) => (
-                        <TableRow key={record.id}>
-                            <TableCell className="font-medium">{record.transactionId}</TableCell>
-                            <TableCell>{format(new Date(record.date), 'dd MMM yyyy')}</TableCell>
-                            <TableCell>{record.category}</TableCell>
-                            <TableCell>{record.description}</TableCell>
-                            <TableCell>{record.paidTo}</TableCell>
-                            <TableCell>{record.paymentMethod}</TableCell>
-                            <TableCell className="text-right">{record.amount.toFixed(2)}</TableCell>
-                        </TableRow>
-                    ))
+        <div className="space-y-4">
+            {/* Filter bar */}
+            <div className="flex flex-wrap gap-3 p-3 bg-muted/40 rounded-lg border border-border">
+                <Input
+                    placeholder="Search description, paid to, ID…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="max-w-xs bg-card"
+                />
+                <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="w-36 bg-card"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c === 'All' ? 'All Categories' : c}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Select value={month} onValueChange={setMonth}>
+                    <SelectTrigger className="w-36 bg-card"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {MONTHS.map((m) => <SelectItem key={m} value={m}>{m === 'All' ? 'All Months' : m}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Select value={year} onValueChange={setYear}>
+                    <SelectTrigger className="w-28 bg-card"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {years.map((y) => <SelectItem key={y} value={y}>{y === 'All' ? 'All Years' : y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                {(search || category !== 'All' || month !== 'All' || year !== 'All') && (
+                    <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setCategory('All'); setMonth('All'); setYear('All'); }}>
+                        Clear
+                    </Button>
                 )}
-            </TableBody>
-        </Table>
+            </div>
+
+            {/* Table */}
+            <div className="border border-border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-muted/40 border-b border-border">
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Category</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Description</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Paid To</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Method</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Amount</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">Auto</th>
+                            <th className="px-4 py-3" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.length === 0 ? (
+                            <tr>
+                                <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground text-sm">
+                                    No records match the current filters.
+                                </td>
+                            </tr>
+                        ) : (
+                            filtered.map((r) => (
+                                <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                                    <td className="px-4 py-3 text-muted-foreground tabular-nums whitespace-nowrap">
+                                        {format(new Date(r.date), 'dd MMM yyyy')}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
+                                            {r.category}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-foreground max-w-[220px] truncate">{r.description}</td>
+                                    <td className="px-4 py-3 text-muted-foreground max-w-[140px] truncate">{r.paidTo}</td>
+                                    <td className="px-4 py-3 text-muted-foreground">{r.paymentMethod}</td>
+                                    <td className="px-4 py-3 text-right font-medium tabular-nums text-foreground">{fmt(Number(r.amount))}</td>
+                                    <td className="px-4 py-3 text-center">
+                                        {r.isAutomatic && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                                                Auto
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        {!r.isAutomatic && (
+                                            <button
+                                                onClick={() => handleDelete(r.id)}
+                                                disabled={deleting === r.id || isPending}
+                                                className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                    {filtered.length > 0 && (
+                        <tfoot>
+                            <tr className="border-t border-border bg-muted/40">
+                                <td colSpan={5} className="px-4 py-3 text-xs font-medium text-muted-foreground">
+                                    {filtered.length} record{filtered.length !== 1 ? 's' : ''}
+                                </td>
+                                <td className="px-4 py-3 text-right font-semibold tabular-nums text-foreground">
+                                    {fmt(total)}
+                                </td>
+                                <td colSpan={2} />
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+            </div>
+        </div>
     );
 }

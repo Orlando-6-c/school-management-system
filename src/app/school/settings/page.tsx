@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSchoolSettings } from '@/actions/settings';
 import SettingsForm from '@/components/school/SettingsForm';
 import BankAccountsManager from '@/components/school/BankAccountsManager';
+import FeePaymentPolicyEditor from '@/components/school/FeePaymentPolicyEditor';
 
 export const runtime = 'nodejs';
 
@@ -35,6 +36,7 @@ export default async function SettingsPage() {
 
             <SettingsForm initialSettings={settings} />
             <BankAccountsManager bankAccounts={settings.bankAccounts} />
+            <FeePaymentPolicyEditor initialPolicy={settings.feePaymentPolicy} />
         </div>
     );
 }

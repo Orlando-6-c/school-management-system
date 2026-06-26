@@ -8,6 +8,11 @@ import { z } from 'zod';
 import { hashPassword } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
+const salaryExtrasSchema = z.array(z.object({
+    name: z.string().min(1),
+    amount: z.number(),
+})).default([]);
+
 const staffSchema = z.object({
     name: z.string().min(1, "Name is required"),
     fatherName: z.string().min(1, "Father Name is required"),
@@ -15,10 +20,14 @@ const staffSchema = z.object({
     dateOfBirth: z.coerce.date(),
     contact: z.string().min(10, "Valid contact number is required"),
     gender: z.enum(['Male', 'Female']),
-    role: z.string().min(1, "Role is required"), // Store 'Finance' or other staff roles here as string
+    role: z.string().min(1, "Role is required"),
     workingHours: z.string().min(1, "Working hours are required"),
+    salary: z.coerce.number().min(0, "Salary cannot be negative").default(0),
+    salaryExtras: z.string().optional().transform(v => {
+        try { return salaryExtrasSchema.parse(JSON.parse(v || '[]')); } catch { return []; }
+    }),
     photograph: z.string().optional(),
-    userRole: z.enum(['Finance', 'Staff', 'SchoolAdmin']).optional(), // For determining if a User account is needed
+    userRole: z.enum(['Finance', 'ReadOnly', 'SchoolAdmin']).optional(),
 });
 
 export type StaffState = {
@@ -64,14 +73,16 @@ export async function addStaff(prevState: StaffState | undefined, formData: Form
                     dateOfBirth: data.dateOfBirth,
                     contact: data.contact,
                     gender: data.gender,
-                    role: data.role, // This is the job title/designation
+                    role: data.role,
                     workingHours: data.workingHours,
+                    salary: data.salary,
+                    salaryExtras: data.salaryExtras,
                     photograph: data.photograph || null,
                 }
             });
 
             // Create User Account if applicable (e.g. Finance)
-            if (data.userRole === 'Finance' || data.userRole === 'Staff' || data.userRole === 'SchoolAdmin') {
+            if (data.userRole === 'Finance' || data.userRole === 'ReadOnly' || data.userRole === 'SchoolAdmin') {
                 const tempPassword = Math.random().toString(36).slice(-8);
                 const hashedPassword = await hashPassword(tempPassword);
 
@@ -141,11 +152,23 @@ export async function updateStaff(prevState: StaffState | undefined, formData: F
     const result = updateStaffSchema.safeParse(rawData);
     if (!result.success) return { errors: result.error.flatten().fieldErrors, message: 'Validation failed.' };
 
-    const { id, ...data } = result.data;
+    const { id, userRole: _userRole, ...data } = result.data;
     try {
         await db.staff.update({
             where: { id, schoolId: session.schoolId },
-            data: { ...data, photograph: data.photograph ?? undefined },
+            data: {
+                name: data.name,
+                fatherName: data.fatherName,
+                cnic: data.cnic,
+                dateOfBirth: data.dateOfBirth,
+                contact: data.contact,
+                gender: data.gender,
+                role: data.role,
+                workingHours: data.workingHours,
+                salary: data.salary ?? 0,
+                salaryExtras: data.salaryExtras ?? [],
+                photograph: data.photograph ?? undefined,
+            },
         });
         revalidatePath('/school/staff');
         revalidatePath(`/school/staff/${id}/edit`);

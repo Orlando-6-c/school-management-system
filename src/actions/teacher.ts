@@ -7,6 +7,11 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { hashPassword } from '@/lib/auth';
 
+const salaryExtrasSchema = z.array(z.object({
+    name: z.string().min(1),
+    amount: z.number(),
+})).default([]);
+
 const teacherSchema = z.object({
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
@@ -17,8 +22,11 @@ const teacherSchema = z.object({
     qualification: z.string().min(1, "Qualification is required"),
     subject: z.string().min(1, "Subject is required"),
     experience: z.string().optional(),
-    joiningDate: z.coerce.date(), // Auto-convert string to Date
-    salary: z.coerce.number().min(0, "Salary cannot be negative"), // Auto-convert string to number
+    joiningDate: z.coerce.date(),
+    salary: z.coerce.number().min(0, "Salary cannot be negative"),
+    salaryExtras: z.string().optional().transform(v => {
+        try { return salaryExtrasSchema.parse(JSON.parse(v || '[]')); } catch { return []; }
+    }),
     address: z.string().optional(),
     photograph: z.string().optional(),
 });
@@ -62,7 +70,7 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
                     schoolId: session.schoolId!,
                     ...data,
                     salary: data.salary ?? null,
-                    // Ensure explicit nulls for optional fields if they are missing in data object
+                    salaryExtras: data.salaryExtras ?? [],
                     address: data.address || null,
                     experience: data.experience || null,
                     photograph: data.photograph || null,
@@ -126,6 +134,7 @@ export async function updateTeacher(id: string, prevState: TeacherState | undefi
             data: {
                 ...data,
                 salary: data.salary ?? undefined,
+                salaryExtras: data.salaryExtras ?? [],
                 email: data.email || undefined,
                 address: data.address || null,
                 experience: data.experience || null,

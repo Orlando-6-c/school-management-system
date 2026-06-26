@@ -169,7 +169,6 @@ export default function IncomeForm({ students, defaultValues }: IncomeFormProps)
                             <SelectValue placeholder="Select Student" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">-- None --</SelectItem>
                             {students.map((student) => (
                                 <SelectItem key={student.id} value={student.id}>
                                     {student.name} ({student.rollNumber})

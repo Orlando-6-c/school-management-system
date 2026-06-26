@@ -1,55 +1,47 @@
 import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { getChallans } from '@/actions/finance';
 import { getClasses } from '@/actions/academics';
 import { getStudents } from '@/actions/student';
-import { ChallanGenerationClient } from '@/components/school/ChallanGenerationClient';
-import { redirect } from 'next/navigation';
-import db from '@/lib/db'; // Import the db client
+import ChallanList from '@/components/finance/ChallanList';
 
-export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export default async function ChallanPage() {
     const session = await getSession();
-
-    if (!session?.schoolId) {
-        // Or handle this case more gracefully
+    if (!session?.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)) {
         redirect('/login');
     }
 
-    // 1. Fetch School Name
-    const school = await db.school.findUnique({
-        where: { id: session.schoolId },
-        select: { name: true }
-    });
+    const [challans, classes, allStudents] = await Promise.all([
+        getChallans(),
+        getClasses(),
+        getStudents(session.schoolId),
+    ]);
 
-    if (!school) {
-        redirect('/error?message=School not found'); // Handle missing school
-    }
-    const initialSchoolName = school.name;
-
-    // 2. Fetch Data on the Server
-    const klassesData = await getClasses();
-    const studentsData = await getStudents(session.schoolId);
-
-    // Ensure data is in a serializable format for the client component
-    const initialKlasses = klassesData.map(k => ({
-        id: k.id,
-        name: k.name,
-        section: k.section,
-    }));
-
-    const initialStudents = studentsData.map(s => ({
+    const classesForFilter = classes.map(c => ({ id: c.id, name: c.name, section: c.section ?? null }));
+    const studentsForFilter = allStudents.map(s => ({
         id: s.id,
         name: s.name,
         rollNumber: s.rollNumber,
-        class: s.class ? { id: s.class.id, name: s.class.name, section: s.class.section } : null,
-        guardian: s.guardian ? { name: s.guardian.name } : null, // Pass only needed fields
+        classId: s.classId ?? null,
     }));
 
     return (
-        <ChallanGenerationClient 
-            initialKlasses={initialKlasses}
-            initialStudents={initialStudents}
-            initialSchoolName={initialSchoolName} // Pass the school name
-        />
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-semibold text-foreground">Fee Challans</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">{challans.length} challans total</p>
+                </div>
+                <Link href="/school/finance/challan/generate">
+                    <Button size="sm"><Plus className="h-4 w-4 mr-1.5" />Generate Challans</Button>
+                </Link>
+            </div>
+            <ChallanList challans={challans} classes={classesForFilter} students={studentsForFilter} />
+        </div>
     );
 }
