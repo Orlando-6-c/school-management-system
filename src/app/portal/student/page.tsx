@@ -47,7 +47,7 @@ export default async function StudentPortalPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-12">
-            <header className="bg-white p-8 rounded-2xl border border-border shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+            <header className="bg-card p-8 rounded-2xl border border-border shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome back, {student.name}!</h1>
                     <p className="text-muted-foreground mt-2">Class: {student.class.name} {student.class.section ? `(${student.class.section})` : ''} &bull; Roll No: {student.rollNumber}</p>
@@ -62,7 +62,7 @@ export default async function StudentPortalPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Pending Homework */}
-                <section className="space-y-4 shadow-sm border border-border bg-white rounded-xl overflow-hidden text-foreground">
+                <section className="space-y-4 shadow-sm border border-border bg-card rounded-xl overflow-hidden text-foreground">
                     <div className="p-5 border-b border-border bg-muted/30 flex items-center justify-between">
                         <h2 className="text-xl font-bold flex items-center"><Book className="w-5 h-5 mr-2 text-indigo-600" /> Pending Homework</h2>
                     </div>
@@ -94,7 +94,7 @@ export default async function StudentPortalPage() {
                 </section>
 
                 {/* Study Materials */}
-                <section className="space-y-4 shadow-sm border border-border bg-white rounded-xl overflow-hidden text-foreground">
+                <section className="space-y-4 shadow-sm border border-border bg-card rounded-xl overflow-hidden text-foreground">
                     <div className="p-5 border-b border-border bg-muted/30 flex items-center justify-between">
                         <h2 className="text-xl font-bold flex items-center"><FileText className="w-5 h-5 mr-2 text-emerald-600" /> Study Materials</h2>
                     </div>
@@ -121,7 +121,7 @@ export default async function StudentPortalPage() {
             </div>
 
             {/* Timetable Matrix */}
-            <section className="space-y-4 shadow-sm border border-border bg-white rounded-xl overflow-hidden text-foreground">
+            <section className="space-y-4 shadow-sm border border-border bg-card rounded-xl overflow-hidden text-foreground">
                 <div className="p-5 border-b border-border bg-muted/30 flex items-center justify-between">
                     <h2 className="text-xl font-bold flex items-center"><CalendarIcon className="w-5 h-5 mr-2 text-amber-600" /> Weekly Timetable</h2>
                 </div>

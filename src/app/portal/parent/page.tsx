@@ -52,7 +52,7 @@ export default async function ParentPortalPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-12">
-            <header className="bg-white p-8 rounded-2xl border border-border shadow-sm">
+            <header className="bg-card p-8 rounded-2xl border border-border shadow-sm">
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3"><Users className="text-indigo-600" /> Parent Portal: {user.guardian.name}</h1>
                 <p className="text-muted-foreground mt-2">Overseeing {children.length} enrolled {children.length === 1 ? 'child' : 'children'}.</p>
             </header>

@@ -13,7 +13,7 @@ export default async function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
                 {/* Logo */}
                 <div className="text-center mb-8">
@@ -25,7 +25,7 @@ export default async function RegisterPage() {
                 </div>
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl shadow-2xl p-8">
+                <div className="bg-white dark:bg-card/95 dark:backdrop-blur rounded-2xl shadow-2xl p-8 dark:border dark:border-white/10">
                     <RegisterForm />
                 </div>
 

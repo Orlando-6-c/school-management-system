@@ -41,7 +41,7 @@ export default async function LandingPage() {
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="bg-indigo-600 p-1.5 rounded-lg">
+                        <div className="bg-violet-700 p-1.5 rounded-lg">
                             <School className="h-5 w-5 text-white" />
                         </div>
                         <span className="text-xl font-bold text-gray-900">SchoolSys</span>
@@ -56,7 +56,7 @@ export default async function LandingPage() {
                         <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                             Sign in
                         </Link>
-                        <Link href="/register" className="text-sm font-semibold bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                        <Link href="/register" className="text-sm font-semibold bg-violet-700 text-white px-4 py-2 rounded-lg hover:bg-violet-800 transition-colors">
                             Start Free Trial
                         </Link>
                     </nav>
@@ -65,7 +65,7 @@ export default async function LandingPage() {
 
             <main className="flex-grow">
                 {/* Hero */}
-                <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white py-24 px-6">
+                <section className="bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 text-white py-24 px-6">
                     <div className="max-w-4xl mx-auto text-center">
                         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
                             <CheckCircle2 size={14} />
@@ -82,7 +82,7 @@ export default async function LandingPage() {
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link
                                 href="/register"
-                                className="flex items-center gap-2 bg-white text-indigo-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-indigo-50 transition-all text-lg"
+                                className="flex items-center gap-2 bg-white text-violet-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-violet-50 transition-all text-lg"
                             >
                                 Start Free Trial <ArrowRight size={20} />
                             </Link>
@@ -109,8 +109,8 @@ export default async function LandingPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {features.map(({ icon: Icon, title, desc }) => (
                                 <div key={title} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mb-4">
-                                        <Icon className="h-5 w-5 text-indigo-600" />
+                                    <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center mb-4">
+                                        <Icon className="h-5 w-5 text-violet-600" />
                                     </div>
                                     <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
                                     <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
@@ -134,7 +134,7 @@ export default async function LandingPage() {
                             {/* Starter */}
                             <div className="border border-gray-200 rounded-2xl p-8 flex flex-col">
                                 <div className="mb-6">
-                                    <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Starter</p>
+                                    <p className="text-sm font-semibold text-violet-600 uppercase tracking-wide mb-2">Starter</p>
                                     <div className="flex items-end gap-1">
                                         <span className="text-4xl font-extrabold text-gray-900">Rs 2,500</span>
                                         <span className="text-gray-400 mb-1">/month</span>
@@ -158,21 +158,21 @@ export default async function LandingPage() {
                                 </ul>
                                 <Link
                                     href="/register"
-                                    className="block text-center border border-indigo-600 text-indigo-600 font-semibold py-3 rounded-xl hover:bg-indigo-50 transition-colors"
+                                    className="block text-center border border-violet-600 text-violet-600 font-semibold py-3 rounded-xl hover:bg-violet-50 transition-colors"
                                 >
                                     Start Free Trial
                                 </Link>
                             </div>
 
                             {/* School — highlighted */}
-                            <div className="border-2 border-indigo-600 rounded-2xl p-8 flex flex-col relative shadow-xl">
+                            <div className="border-2 border-violet-600 rounded-2xl p-8 flex flex-col relative shadow-xl">
                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                                    <span className="inline-flex items-center gap-1 bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                                    <span className="inline-flex items-center gap-1 bg-violet-700 text-white text-xs font-bold px-3 py-1.5 rounded-full">
                                         <Zap className="h-3 w-3" /> Most Popular
                                     </span>
                                 </div>
                                 <div className="mb-6">
-                                    <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">School</p>
+                                    <p className="text-sm font-semibold text-violet-600 uppercase tracking-wide mb-2">School</p>
                                     <div className="flex items-end gap-1">
                                         <span className="text-4xl font-extrabold text-gray-900">Rs 5,500</span>
                                         <span className="text-gray-400 mb-1">/month</span>
@@ -199,7 +199,7 @@ export default async function LandingPage() {
                                 </ul>
                                 <Link
                                     href="/register"
-                                    className="block text-center bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 transition-colors"
+                                    className="block text-center bg-violet-700 text-white font-semibold py-3 rounded-xl hover:bg-violet-800 transition-colors"
                                 >
                                     Start Free Trial
                                 </Link>
@@ -208,7 +208,7 @@ export default async function LandingPage() {
                             {/* District */}
                             <div className="border border-gray-200 rounded-2xl p-8 flex flex-col">
                                 <div className="mb-6">
-                                    <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">District</p>
+                                    <p className="text-sm font-semibold text-violet-600 uppercase tracking-wide mb-2">District</p>
                                     <div className="flex items-end gap-1">
                                         <span className="text-4xl font-extrabold text-gray-900">Custom</span>
                                     </div>
@@ -233,7 +233,7 @@ export default async function LandingPage() {
                                 </ul>
                                 <Link
                                     href="/login"
-                                    className="block text-center border border-indigo-600 text-indigo-600 font-semibold py-3 rounded-xl hover:bg-indigo-50 transition-colors"
+                                    className="block text-center border border-violet-600 text-violet-600 font-semibold py-3 rounded-xl hover:bg-violet-50 transition-colors"
                                 >
                                     Contact Us
                                 </Link>
@@ -247,15 +247,15 @@ export default async function LandingPage() {
                 </section>
 
                 {/* CTA banner */}
-                <section className="py-20 px-6 bg-indigo-600">
+                <section className="py-20 px-6 bg-violet-700">
                     <div className="max-w-3xl mx-auto text-center">
                         <h2 className="text-4xl font-bold text-white mb-4">Ready to get started?</h2>
-                        <p className="text-indigo-200 text-lg mb-8">
+                        <p className="text-violet-200 text-lg mb-8">
                             Register your school in under a minute. No IT setup, no installation.
                         </p>
                         <Link
                             href="/register"
-                            className="inline-flex items-center gap-2 bg-white text-indigo-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:bg-indigo-50 transition-all text-lg"
+                            className="inline-flex items-center gap-2 bg-white text-violet-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:bg-violet-50 transition-all text-lg"
                         >
                             Create Your School <ArrowRight size={20} />
                         </Link>
@@ -266,7 +266,7 @@ export default async function LandingPage() {
             <footer className="bg-gray-900 text-gray-400 py-10 px-6">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="bg-indigo-600 p-1.5 rounded-lg">
+                        <div className="bg-violet-700 p-1.5 rounded-lg">
                             <School className="h-4 w-4 text-white" />
                         </div>
                         <span className="text-white font-bold">SchoolSys</span>
