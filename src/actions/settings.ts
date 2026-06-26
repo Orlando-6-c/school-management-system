@@ -1,6 +1,7 @@
 'use server';
 
 import { getSession } from '@/lib/session';
+import { hasPermission } from '@/lib/authz';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -33,7 +34,7 @@ export type SettingsState = {
 
 export async function updateSchoolName(prevState: SettingsState | undefined, formData: FormData): Promise<SettingsState> {
     const session = await getSession();
-    if (!session.schoolId || (session.role !== 'SchoolAdmin' && !session.isSuperAdmin)) {
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -63,7 +64,7 @@ export async function updateSchoolName(prevState: SettingsState | undefined, for
 
 export async function updateSessionYear(prevState: SettingsState | undefined, formData: FormData): Promise<SettingsState> {
     const session = await getSession();
-    if (!session.schoolId || (session.role !== 'SchoolAdmin' && !session.isSuperAdmin)) {
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -129,7 +130,7 @@ export async function updateSessionYear(prevState: SettingsState | undefined, fo
 
 export async function updateCurrency(prevState: SettingsState | undefined, formData: FormData): Promise<SettingsState> {
     const session = await getSession();
-    if (!session.schoolId || (session.role !== 'SchoolAdmin' && !session.isSuperAdmin)) {
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -176,7 +177,7 @@ export async function updateCurrency(prevState: SettingsState | undefined, formD
 
 export async function updateLogo(prevState: SettingsState | undefined, formData: FormData): Promise<SettingsState> {
     const session = await getSession();
-    if (!session.schoolId || (session.role !== 'SchoolAdmin' && !session.isSuperAdmin)) {
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -227,14 +228,48 @@ export async function getSchoolSettings() {
             return null;
         }
 
+        const bankAccounts = await (db as any).bankAccount.findMany({ where: { schoolId: session.schoolId } });
+
         return {
             name: school.name,
             logo: school.logo,
             currency: school.currencyConfigurations[0] || null,
+            bankAccounts: bankAccounts,
             currentFinancialYear: school.financialYears[0] || null,
         };
     } catch (error: any) {
         console.error('Get School Settings Error:', error);
         return null;
     }
+}
+
+export async function addBankAccount(prevState: any, formData: FormData) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) return { success: false, message: 'Unauthorized' };
+
+    const bankName = formData.get('bankName') as string;
+    const accountTitle = formData.get('accountTitle') as string;
+    const accountNumber = formData.get('accountNumber') as string;
+
+    if (!bankName || !accountTitle || !accountNumber) return { success: false, message: 'All fields are required' };
+
+    try {
+        await (db as any).bankAccount.create({
+            data: { schoolId: session.schoolId, bankName, accountTitle, accountNumber }
+        });
+        revalidatePath('/school/settings');
+        revalidatePath('/portal/parent');
+        return { success: true, message: 'Bank account added successfully.' };
+    } catch (e) {
+        return { success: false, message: 'Failed to add bank account.' };
+    }
+}
+
+export async function deleteBankAccount(id: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('settings', 'edit'))) throw new Error('Unauthorized');
+
+    await (db as any).bankAccount.delete({ where: { id, schoolId: session.schoolId } });
+    revalidatePath('/school/settings');
+    revalidatePath('/portal/parent');
 }

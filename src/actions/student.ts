@@ -1,6 +1,7 @@
 'use server';
 
 import { getSession } from '@/lib/session';
+import { hasPermission } from '@/lib/authz';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateRollNumber } from '@/lib/utils/roll-number';
@@ -39,7 +40,7 @@ export type AdmissionState = {
 export async function getGuardianByCNIC(cnic: string) {
     try {
         const session = await getSession();
-        if (!session.schoolId) return null;
+        if (!session.schoolId || !(await hasPermission('students', 'view'))) return null;
 
         const guardian = await db.guardian.findUnique({
             where: {
@@ -65,7 +66,7 @@ export async function getGuardianByCNIC(cnic: string) {
 
 export async function admitStudent(prevState: AdmissionState | undefined, formData: FormData): Promise<AdmissionState> {
     const session = await getSession();
-    if (!session.userId || !session.schoolId) {
+    if (!session.userId || !session.schoolId || !(await hasPermission('students', 'create'))) {
         return { message: 'Unauthorized' };
     }
 
@@ -102,6 +103,17 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                     contact: data.guardianContact,
                     email: data.guardianEmail || null,
                     dateOfBirth: new Date(),
+                }
+            });
+
+            const hashedGuardianPassword = await hashPassword(data.guardianContact);
+            await db.user.create({
+                data: {
+                    schoolId: session.schoolId,
+                    username: data.guardianCnic,
+                    password: hashedGuardianPassword,
+                    role: 'Parent',
+                    guardianId: guardian.id,
                 }
             });
         }
@@ -160,8 +172,8 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                 }
             });
 
-            // 4. Create User Account (Role: STUDENT - ReadOnly for now)
-            // Username: RollNumber
+            // 4. Create User Account (Role: STUDENT)
+            // Username: RollNumber, Password: RollNumber
             const hashedPassword = await hashPassword(student.rollNumber);
 
             await tx.user.create({
@@ -169,7 +181,8 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
                     schoolId: session.schoolId!,
                     username: student.rollNumber,
                     password: hashedPassword,
-                    role: 'ReadOnly',
+                    role: 'Student',
+                    studentId: student.id,
                 }
             });
 
@@ -190,7 +203,7 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
 
 export async function updateStudent(id: string, prevState: AdmissionState | undefined, formData: FormData): Promise<AdmissionState> {
     const session = await getSession();
-    if (!session.userId || !session.schoolId) {
+    if (!session.userId || !session.schoolId || !(await hasPermission('students', 'edit'))) {
         return { message: 'Unauthorized' };
     }
 
@@ -288,14 +301,15 @@ export async function updateStudent(id: string, prevState: AdmissionState | unde
 
 export async function deleteStudent(studentId: string, reason?: string) {
     const session = await getSession();
-    if (session.role !== 'SchoolAdmin' || !session.schoolId) {
+    if (!session.schoolId || !(await hasPermission('students', 'delete'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
+    const schoolId = session.schoolId!;
     try {
         await db.$transaction(async (tx) => {
             const student = await tx.student.update({
-                where: { id: studentId, schoolId: session.schoolId },
+                where: { id: studentId, schoolId },
                 data: {
                     isActive: false,
                     deletedAt: new Date(),
@@ -309,8 +323,8 @@ export async function deleteStudent(studentId: string, reason?: string) {
             // Also deactivate the corresponding user account
             await tx.user.updateMany({
                 where: {
-                    username: student.rollNumber,
-                    schoolId: session.schoolId,
+                    studentId: student.id,
+                    schoolId,
                 },
                 data: {
                     isActive: false,
@@ -320,7 +334,7 @@ export async function deleteStudent(studentId: string, reason?: string) {
             // Create audit log entry
             await tx.auditLog.create({
                 data: {
-                    schoolId: session.schoolId,
+                    schoolId,
                     actorId: session.userId,
                     actorType: 'User', // Assuming admin is a 'User'
                     action: 'soft_delete_student',

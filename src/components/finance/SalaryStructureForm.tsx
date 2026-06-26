@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addSalaryStructure, updateSalaryStructure } from '@/actions/finance';
@@ -34,7 +34,7 @@ export default function SalaryStructureForm({ id, defaultValues }: SalaryStructu
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm<SalaryStructureFormValues>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as Resolver<SalaryStructureFormValues>,
         defaultValues: {
             allowances: 0,
             deductions: 0,

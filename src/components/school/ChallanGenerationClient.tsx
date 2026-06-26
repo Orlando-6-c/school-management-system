@@ -58,18 +58,22 @@ interface GeneratedChallan {
     studentId: string;
     month: string;
     year: number;
-    issueDate: string; // Use string for serialization
-    dueDate: string;   // Use string for serialization
+    issueDate: string;
+    dueDate: string;
     totalAmount: number;
-    amount: number; // Base tuition amount
-    discount: number; // Discount amount
+    amount: number;
+    discount: number;
     lateFeeAmount: number;
     paidAmount: number;
-    status: string; // Assuming FeeStatus enum
+    status: string;
     isGenerated: boolean;
     schoolId: string;
-    
-    // Relations included from backend
+    // Flat fields for PDF rendering
+    studentName: string;
+    rollNumber: string;
+    className: string;
+    sectionName?: string;
+    schoolName: string;
     student: {
         id: string;
         name: string;
@@ -152,7 +156,7 @@ export function ChallanGenerationClient({ initialKlasses, initialStudents, initi
             dueDate
         );
 
-        if (result.success && result.generatedChallans) {
+        if (result.success && 'generatedChallans' in result && result.generatedChallans) {
             // Filter generatedChallans by selectedStudents and map to PDF-ready format
             const finalChallansForPdf = result.generatedChallans
                 .filter(challan => selectedStudents.has(challan.student.id))
@@ -165,12 +169,16 @@ export function ChallanGenerationClient({ initialKlasses, initialStudents, initi
                     paidAmount: Number(challan.paidAmount),
                     issueDate: challan.issueDate.toString(), // Convert to string for ChallanPdfDocument
                     dueDate: challan.dueDate.toString(),     // Convert to string for ChallanPdfDocument
-                    schoolName: initialSchoolName, // Pass school name from props
-                    feeBreakdown: challan.feeBreakdown.map(item => ({ // Ensure numbers
+                    schoolName: initialSchoolName,
+                    studentName: challan.student.name,
+                    rollNumber: challan.student.rollNumber,
+                    className: challan.student.class?.name ?? '',
+                    sectionName: challan.student.class?.section ?? undefined,
+                    feeBreakdown: challan.feeBreakdown.map((item: FeeBreakdownItem) => ({
                         description: item.description,
                         amount: Number(item.amount),
                     })),
-                    additionalCharges: challan.additionalCharges.map(item => ({ // Ensure numbers
+                    additionalCharges: challan.additionalCharges.map((item: AdditionalChargeItem) => ({
                         additionalCharge: { name: item.additionalCharge.name },
                         amountApplied: Number(item.amountApplied),
                     })),

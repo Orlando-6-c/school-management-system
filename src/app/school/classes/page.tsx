@@ -21,8 +21,8 @@ export default async function ClassesPage() {
     // Fetch Teachers
     const teachers = await db.teacher.findMany({
         where: { schoolId: session.schoolId! },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' }
+        select: { id: true, firstName: true, lastName: true },
+        orderBy: { firstName: 'asc' }
     });
 
     return (
@@ -35,7 +35,7 @@ export default async function ClassesPage() {
             <div className="grid gap-6 lg:grid-cols-3">
                 {/* Left Column: Create Form */}
                 <div className="lg:col-span-1">
-                    <CreateClassForm teachers={teachers} />
+                    <CreateClassForm teachers={teachers.map(t => ({ id: t.id, name: `${t.firstName} ${t.lastName}` }))} />
                 </div>
 
                 {/* Right Column: Class List */}
@@ -61,7 +61,7 @@ export default async function ClassesPage() {
                                             Fee: <span className="font-medium text-foreground">{Number(cls.monthlyTuitionFee)}</span> / month
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">
-                                            {cls._count.students} Students • {cls.teacherAssignments[0]?.teacher.name || 'No Teacher'}
+                                            {cls._count.students} Students • {cls.teacherAssignments[0]?.teacher ? `${cls.teacherAssignments[0].teacher.firstName} ${cls.teacherAssignments[0].teacher.lastName}` : 'No Teacher'}
                                         </div>
                                     </div>
                                     {/* Actions could go here */}

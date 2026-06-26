@@ -27,7 +27,7 @@ export default async function ChallanPage() {
     const initialSchoolName = school.name;
 
     // 2. Fetch Data on the Server
-    const klassesData = await getClasses(session.schoolId);
+    const klassesData = await getClasses();
     const studentsData = await getStudents(session.schoolId);
 
     // Ensure data is in a serializable format for the client component

@@ -20,22 +20,22 @@ export default async function GenerateSalarySlipsPage() {
 
     // Combine all employees into a single array, adding employeeType
     const allEmployees = [
-        ...teachers.map(t => ({ 
-            id: t.id, 
-            name: `${t.firstName} ${t.lastName}`, 
-            type: 'Teacher' as 'Teacher',
+        ...teachers.map((t: { id: string; firstName: string; lastName: string; salaryStructureId: string | null }) => ({
+            id: t.id,
+            name: `${t.firstName} ${t.lastName}`,
+            type: 'Teacher' as const,
             hasSalaryStructure: !!t.salaryStructureId,
         })),
-        ...staff.map(s => ({ 
-            id: s.id, 
-            name: s.name, 
-            type: 'Staff' as 'Staff',
+        ...staff.map((s: { id: string; name: string; salaryStructureId: string | null }) => ({
+            id: s.id,
+            name: s.name,
+            type: 'Staff' as const,
             hasSalaryStructure: !!s.salaryStructureId,
         })),
-        ...executives.map(e => ({ 
-            id: e.id, 
-            name: e.name, 
-            type: 'Executive' as 'Executive',
+        ...executives.map((e: { id: string; name: string; salaryStructureId: string | null }) => ({
+            id: e.id,
+            name: e.name,
+            type: 'Executive' as const,
             hasSalaryStructure: !!e.salaryStructureId,
         })),
     ];

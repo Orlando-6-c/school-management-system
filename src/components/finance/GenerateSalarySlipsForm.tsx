@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateBulkSalarySlips } from '@/actions/finance';
@@ -49,7 +49,7 @@ export default function GenerateSalarySlipsForm({ employees }: GenerateSalarySli
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm<GenerateSalarySlipsFormValues>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as Resolver<GenerateSalarySlipsFormValues>,
         defaultValues: {
             month: format(new Date(), 'MMMM'), // Current month
             year: getYear(new Date()), // Current year
@@ -87,11 +87,11 @@ export default function GenerateSalarySlipsForm({ employees }: GenerateSalarySli
             } else {
                 setError(result.message || 'Failed to generate salary slips.');
                 // Handle field-specific errors if any
-                if (result.errors) {
+                if ('errors' in result && result.errors) {
                     for (const key in result.errors) {
                         form.setError(key as keyof GenerateSalarySlipsFormValues, {
                             type: 'server',
-                            message: result.errors[key]?.[0],
+                            message: (result.errors as Record<string, string[]>)[key]?.[0],
                         });
                     }
                 }

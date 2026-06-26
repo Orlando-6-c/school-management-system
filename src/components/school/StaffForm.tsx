@@ -2,146 +2,139 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { addStaff, updateStaff, type StaffState } from '@/actions/staff';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { addStaff, StaffState } from '@/actions/staff';
-import { Loader2 } from 'lucide-react';
 
-const initialState: StaffState = {
-    message: '',
-    errors: {},
-};
+interface StaffFormProps {
+    staffId?: string;
+    defaultValues?: {
+        name?: string;
+        fatherName?: string;
+        cnic?: string;
+        dateOfBirth?: string;
+        contact?: string;
+        gender?: 'Male' | 'Female';
+        role?: string;
+        workingHours?: string;
+        photograph?: string;
+    };
+}
 
-export default function StaffForm() {
+export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
     const router = useRouter();
-    const [state, formAction] = useActionState(addStaff, initialState);
-    const [pending, setPending] = useState(false);
-    const [selectedRole, setSelectedRole] = useState("Staff");
+    const isEdit = !!staffId;
+    const action = isEdit ? updateStaff : addStaff;
+
+    const [state, formAction, isPending] = useActionState<StaffState | undefined, FormData>(action, undefined);
+    const [gender, setGender] = useState<string>(defaultValues?.gender ?? '');
+    const [userRole, setUserRole] = useState<string>('');
 
     useEffect(() => {
-        if (state?.success) {
-            // Ideally redirect to a list, but if we don't have one, just refresh or clear
-            // router.push('/school/staff'); 
-            // For now, let's just show success
-            setPending(false);
-            alert("Staff added successfully!"); // Temporary feedback
-        } else if (state?.message) {
-            setPending(false);
-        }
-    }, [state?.success, state?.message]);
+        if (state?.success) router.push('/school/staff');
+    }, [state?.success, router]);
 
     return (
-        <form action={(formData) => {
-            setPending(true);
-            // Append the helper userRole if Finance is selected
-            if (selectedRole === 'Finance') {
-                formData.append('userRole', 'Finance');
-                formData.set('role', 'Finance Clerk'); // Set job title
-            } else {
-                // For normal staff, just use the role input or default
-            }
-            formAction(formData);
-        }}>
-            <div className="grid gap-6 max-w-2xl mx-auto">
-                <Card className="border-border">
-                    <CardHeader>
-                        <CardTitle>Add New Staff Member</CardTitle>
-                        <CardDescription>Create a profile for non-teaching staff (Clerks, Admins, etc).</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" name="name" required />
-                            {state?.errors?.name && <p className="text-red-500 text-xs">{state.errors.name}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="fatherName">Father Name</Label>
-                            <Input id="fatherName" name="fatherName" required />
-                            {state?.errors?.fatherName && <p className="text-red-500 text-xs">{state.errors.fatherName}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cnic">CNIC</Label>
-                            <Input id="cnic" name="cnic" placeholder="12345-1234567-1" required />
-                            {state?.errors?.cnic && <p className="text-red-500 text-xs">{state.errors.cnic}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                            <Input id="dateOfBirth" name="dateOfBirth" type="date" required />
-                            {state?.errors?.dateOfBirth && <p className="text-red-500 text-xs">{state.errors.dateOfBirth}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="contact">Contact Number</Label>
-                            <Input id="contact" name="contact" placeholder="0300-1234567" required />
-                            {state?.errors?.contact && <p className="text-red-500 text-xs">{state.errors.contact}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="gender">Gender</Label>
-                            <Select name="gender" defaultValue="Male" required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Gender" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Male">Male</SelectItem>
-                                    <SelectItem value="Female">Female</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+        <form action={formAction} className="space-y-4">
+            {isEdit && <input type="hidden" name="id" value={staffId} />}
 
-                        <div className="space-y-2">
-                            <Label htmlFor="roleSelect">System Role</Label>
-                            <Select
-                                value={selectedRole}
-                                onValueChange={(val) => setSelectedRole(val)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Staff">General Staff</SelectItem>
-                                    <SelectItem value="Finance">Finance Clerk (Login Access)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">
-                                {selectedRole === 'Finance'
-                                    ? "Will create a login account with 'Finance' role."
-                                    : "Standard staff profile without login access."}
-                            </p>
-                        </div>
+            {state?.message && !state.success && (
+                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+                    {state.message}
+                </p>
+            )}
 
-                        {selectedRole !== 'Finance' && (
-                            <div className="space-y-2">
-                                <Label htmlFor="role">Job Title</Label>
-                                <Input id="role" name="role" placeholder="e.g. Peon, Guard" required />
-                            </div>
-                        )}
-
-                        <div className="space-y-2">
-                            <Label htmlFor="workingHours">Working Hours</Label>
-                            <Input id="workingHours" name="workingHours" defaultValue="8:00 AM - 2:00 PM" required />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {state?.message && !state.success && (
-                    <div className="p-4 bg-red-50 text-red-600 rounded-md">
-                        {state.message}
-                    </div>
-                )}
-                {state?.success && state?.message && (
-                    <div className="p-4 bg-green-50 text-green-600 rounded-md">
-                        {state.message}
-                    </div>
-                )}
-
-                <div className="flex justify-end gap-4">
-                    <Button type="submit" disabled={pending}>
-                        {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add Staff Member
-                    </Button>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input id="name" name="name" defaultValue={defaultValues?.name} />
+                    {state?.errors?.name && <p className="text-xs text-destructive">{state.errors.name[0]}</p>}
                 </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="fatherName">Father Name *</Label>
+                    <Input id="fatherName" name="fatherName" defaultValue={defaultValues?.fatherName} />
+                    {state?.errors?.fatherName && <p className="text-xs text-destructive">{state.errors.fatherName[0]}</p>}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label htmlFor="cnic">CNIC *</Label>
+                    <Input id="cnic" name="cnic" placeholder="3520212345671" defaultValue={defaultValues?.cnic} />
+                    {state?.errors?.cnic && <p className="text-xs text-destructive">{state.errors.cnic[0]}</p>}
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                    <Input id="dateOfBirth" name="dateOfBirth" type="date" defaultValue={defaultValues?.dateOfBirth} />
+                    {state?.errors?.dateOfBirth && <p className="text-xs text-destructive">{state.errors.dateOfBirth[0]}</p>}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label htmlFor="contact">Contact *</Label>
+                    <Input id="contact" name="contact" placeholder="03001234567" defaultValue={defaultValues?.contact} />
+                    {state?.errors?.contact && <p className="text-xs text-destructive">{state.errors.contact[0]}</p>}
+                </div>
+                <div className="space-y-1.5">
+                    <Label>Gender *</Label>
+                    <input type="hidden" name="gender" value={gender} />
+                    <Select value={gender} onValueChange={setGender}>
+                        <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {state?.errors?.gender && <p className="text-xs text-destructive">{state.errors.gender[0]}</p>}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label htmlFor="role">Designation / Role *</Label>
+                    <Input id="role" name="role" placeholder="e.g. Peon, Security Guard, Librarian" defaultValue={defaultValues?.role} />
+                    {state?.errors?.role && <p className="text-xs text-destructive">{state.errors.role[0]}</p>}
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="workingHours">Working Hours *</Label>
+                    <Input id="workingHours" name="workingHours" placeholder="e.g. 8 AM – 4 PM" defaultValue={defaultValues?.workingHours} />
+                    {state?.errors?.workingHours && <p className="text-xs text-destructive">{state.errors.workingHours[0]}</p>}
+                </div>
+            </div>
+
+            <div className="space-y-1.5">
+                <Label htmlFor="photograph">Photo URL (optional)</Label>
+                <Input id="photograph" name="photograph" placeholder="https://..." defaultValue={defaultValues?.photograph} />
+            </div>
+
+            {!isEdit && (
+                <div className="space-y-1.5">
+                    <Label>System Login Role (optional)</Label>
+                    <input type="hidden" name="userRole" value={userRole} />
+                    <Select value={userRole} onValueChange={setUserRole}>
+                        <SelectTrigger><SelectValue placeholder="None — no login account" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="Finance">Finance (CNIC used as username)</SelectItem>
+                            <SelectItem value="Staff">Staff (CNIC used as username)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                        If set, a login account is created with the CNIC as the username.
+                    </p>
+                </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+                <Button type="submit" disabled={isPending}>
+                    {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Staff Member'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => router.push('/school/staff')}>
+                    Cancel
+                </Button>
             </div>
         </form>
     );

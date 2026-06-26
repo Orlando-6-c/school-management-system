@@ -1,6 +1,7 @@
 'use server';
 
 import { getSession } from '@/lib/session';
+import { hasPermission } from '@/lib/authz';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -25,11 +26,12 @@ export type StaffState = {
     message?: string;
     errors?: Record<string, string[]>;
     staffId?: string;
+    tempPassword?: string;
 };
 
 export async function addStaff(prevState: StaffState | undefined, formData: FormData): Promise<StaffState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('staff', 'create'))) {
         return { message: 'Unauthorized' };
     }
 
@@ -50,6 +52,7 @@ export async function addStaff(prevState: StaffState | undefined, formData: Form
     const data = result.data;
 
     try {
+        let newStaffObj: any = null;
         await db.$transaction(async (tx) => {
             // Create Staff Record
             const staff = await tx.staff.create({
@@ -68,39 +71,39 @@ export async function addStaff(prevState: StaffState | undefined, formData: Form
             });
 
             // Create User Account if applicable (e.g. Finance)
-            if (data.userRole === 'Finance') {
-                const hashedPassword = await hashPassword("password123"); // Default password
+            if (data.userRole === 'Finance' || data.userRole === 'Staff' || data.userRole === 'SchoolAdmin') {
+                const tempPassword = Math.random().toString(36).slice(-8);
+                const hashedPassword = await hashPassword(tempPassword);
 
                 // Check if user already exists
                 const existingUser = await tx.user.findFirst({
                     where: {
-                        username: data.contact, // Using contact as username for now? Or maybe add an email field?
+                        username: data.cnic,
                         schoolId: session.schoolId!
                     }
                 });
 
                 if (existingUser) {
-                    throw new Error(`User with username ${data.contact} already exists.`);
+                    throw new Error(`User with username ${data.cnic} already exists.`);
                 }
-
-                // Using contact number as username for staff if email is not present? 
-                // Let's stick to the prompt's simplicity. The prompt said "If Finance is selected... create a user".
-                // We'll use the staff name or contact as username. Let's use contact for uniqueness.
 
                 await tx.user.create({
                     data: {
                         schoolId: session.schoolId!,
-                        username: `finance_${data.contact}`, // Prefix to avoid collisions? or just contact.
+                        username: data.cnic,
                         password: hashedPassword,
-                        role: 'Finance',
+                        role: data.userRole as any,
+                        staffId: staff.id,
                         isActive: true,
                     }
                 });
+                return { ...staff, tempPassword };
             }
+            return staff;
         });
 
-        revalidatePath('/school/staff'); // Assuming this path exists or will exist
-        return { success: true, message: 'Staff member added successfully.' };
+        revalidatePath('/school/staff');
+        return { success: true, message: 'Staff member added successfully.', tempPassword: newStaffObj?.tempPassword };
 
     } catch (error: any) {
         console.error('Add Staff Error:', error);
@@ -108,5 +111,58 @@ export async function addStaff(prevState: StaffState | undefined, formData: Form
             return { message: 'A staff member with this CNIC already exists.' };
         }
         return { message: error.message || 'Failed to add staff member.' };
+    }
+}
+
+export async function getStaff() {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('staff', 'view'))) return [];
+    return db.staff.findMany({
+        where: { schoolId: session.schoolId, isActive: true },
+        orderBy: { name: 'asc' },
+    });
+}
+
+export async function getStaffById(id: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('staff', 'view'))) return null;
+    return db.staff.findUnique({ where: { id, schoolId: session.schoolId } });
+}
+
+const updateStaffSchema = staffSchema.partial().extend({ id: z.string() });
+
+export async function updateStaff(prevState: StaffState | undefined, formData: FormData): Promise<StaffState> {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('staff', 'edit'))) return { message: 'Unauthorized' };
+
+    const rawData = Object.fromEntries(formData.entries());
+    if (rawData.photograph === '') delete rawData.photograph;
+
+    const result = updateStaffSchema.safeParse(rawData);
+    if (!result.success) return { errors: result.error.flatten().fieldErrors, message: 'Validation failed.' };
+
+    const { id, ...data } = result.data;
+    try {
+        await db.staff.update({
+            where: { id, schoolId: session.schoolId },
+            data: { ...data, photograph: data.photograph ?? undefined },
+        });
+        revalidatePath('/school/staff');
+        revalidatePath(`/school/staff/${id}/edit`);
+        return { success: true, message: 'Staff member updated.' };
+    } catch (error: any) {
+        return { message: error.message || 'Failed to update staff member.' };
+    }
+}
+
+export async function deleteStaff(id: string) {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('staff', 'delete'))) return { success: false, message: 'Unauthorized' };
+    try {
+        await db.staff.update({ where: { id, schoolId: session.schoolId }, data: { isActive: false } });
+        revalidatePath('/school/staff');
+        return { success: true, message: 'Staff member removed.' };
+    } catch {
+        return { success: false, message: 'Failed to remove staff member.' };
     }
 }

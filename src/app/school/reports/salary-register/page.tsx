@@ -1,0 +1,22 @@
+import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import { hasPermission } from '@/lib/authz';
+import { SalaryRegisterReport } from '@/components/school/reports/SalaryRegisterReport';
+
+export const runtime = 'nodejs';
+
+export default async function SalaryRegisterPage() {
+    const session = await getSession();
+    if (!session.schoolId) redirect('/login');
+    if (!(await hasPermission('reports', 'view'))) redirect('/school/reports');
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Salary Register</h1>
+                <p className="text-muted-foreground mt-1">Monthly salary slips for all employees.</p>
+            </div>
+            <SalaryRegisterReport />
+        </div>
+    );
+}

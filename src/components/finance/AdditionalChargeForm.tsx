@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ChargeType, IncomeCategory } from '@prisma/client';
@@ -26,14 +26,10 @@ const months = [
 // Form Schema
 const formSchema = z.object({
     name: z.string().min(1, 'Charge name is required'),
-    type: z.nativeEnum(ChargeType, {
-        errorMap: () => ({ message: 'Invalid charge type' }),
-    }),
+    type: z.nativeEnum(ChargeType, { message: 'Invalid charge type' }),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
     applicableMonths: z.array(z.string()).optional(), // Array of month names
-    incomeCategory: z.nativeEnum(IncomeCategory, {
-        errorMap: () => ({ message: 'Invalid income category' }),
-    }),
+    incomeCategory: z.nativeEnum(IncomeCategory, { message: 'Invalid income category' }),
     studentId: z.string().optional().nullable(),
     classId: z.string().optional().nullable(),
 });
@@ -52,7 +48,7 @@ export default function AdditionalChargeForm({ students, classes, defaultValues 
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm<AdditionalChargeFormValues>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as Resolver<AdditionalChargeFormValues>,
         defaultValues: {
             applicableMonths: [],
             studentId: '',

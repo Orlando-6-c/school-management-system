@@ -25,11 +25,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { deleteStudent } from '@/actions/student';
-import { Session } from '@/lib/session'; // Assuming Session type is exported from '@/lib/session'
+
 
 interface StudentTableProps {
     students: any[]; // Replace 'any' with actual Student type later
-    session: Session; // Assuming Session type is exported from '@/lib/session'
+    session: any; // Assuming Session type is exported from '@/lib/session'
     classes: any[]; // Replace 'any' with actual Class type later
 }
 
@@ -75,13 +75,14 @@ export function StudentTable({ students, session, classes }: StudentTableProps) 
                         <TableHead>Class</TableHead>
                         <TableHead>Guardian</TableHead>
                         <TableHead>Fee</TableHead>
+                        <TableHead>Account</TableHead>
                         <TableHead className="text-right print:hidden">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {students.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                                 No students found. Admit a student to get started.
                             </TableCell>
                         </TableRow>
@@ -135,6 +136,15 @@ export function StudentTable({ students, session, classes }: StudentTableProps) 
                                             {Number(student.monthlyFees)}
                                         </span>
                                     )}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 flex max-w-min rounded">
+                                        UID:{student.rollNumber}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest flex flex-col gap-0.5">
+                                        <span>Role: Student</span>
+                                        <span>Pass: {student.rollNumber}</span>
+                                    </div>
                                 </TableCell>
 
                                 {/* Actions Column */}

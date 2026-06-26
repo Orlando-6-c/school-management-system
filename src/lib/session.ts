@@ -1,6 +1,7 @@
 import { SessionOptions } from 'iron-session';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
+import { env } from './env';
 
 export interface SessionData {
     userId: string;
@@ -12,10 +13,10 @@ export interface SessionData {
 }
 
 export const sessionOptions: SessionOptions = {
-    password: process.env.SESSION_SECRET as string,
+    password: env.SESSION_SECRET,
     cookieName: 'school_management_session',
     cookieOptions: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
     },
 };
 

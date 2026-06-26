@@ -1,7 +1,9 @@
 import { getSession } from '@/lib/session';
 import db from '@/lib/db';
 import { CreateClassDialog } from '@/components/school/CreateClassDialog';
+import { ClassActions } from '@/components/school/ClassActions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export const runtime = 'nodejs';
 
@@ -34,7 +36,7 @@ export default async function AcademicsPage() {
     // Fetch Classes with student counts and teacher assignments
     // Added safe fetching: returns empty array if DB call fails (though db.class.findMany usually doesn't throw on empty)
     const classes = await db.class.findMany({
-        where: { schoolId: session.schoolId },
+        where: { schoolId: session.schoolId, isActive: true },
         include: {
             _count: {
                 select: { students: true }
@@ -68,10 +70,18 @@ export default async function AcademicsPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Academics</h1>
                     <p className="text-muted-foreground mt-2">
-                        Manage classes and sections.
+                        Manage classes, sections, and timetables.
                     </p>
                 </div>
-                <CreateClassDialog teachers={teachers} />
+                <div className="flex gap-3">
+                    <Button variant="outline" asChild>
+                        <a href="/school/academics/assignments">Teacher Assignments</a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href="/school/academics/timetable">Timetable Engine</a>
+                    </Button>
+                    <CreateClassDialog teachers={teachers} />
+                </div>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -84,15 +94,18 @@ export default async function AcademicsPage() {
                 ) : (
                     classes.map((cls) => (
                         <Card key={cls.id} className="bg-card shadow-sm border-border hover:shadow-md transition-shadow">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-lg font-bold text-foreground">
-                                    {cls.name}
-                                </CardTitle>
-                                {cls.section && (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        Sec: {cls.section}
-                                    </span>
-                                )}
+                            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                                <div className="flex flex-col gap-1">
+                                    <CardTitle className="text-lg font-bold text-foreground">
+                                        {cls.name}
+                                    </CardTitle>
+                                    {cls.section && (
+                                        <span className="inline-flex max-w-min items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            Sec: {cls.section}
+                                        </span>
+                                    )}
+                                </div>
+                                <ClassActions classItem={cls} teachers={teachers} />
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4 mt-2">

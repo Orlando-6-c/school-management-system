@@ -1,39 +1,13 @@
 'use server';
 
 import { getSession } from '@/lib/session';
+import { hasPermission } from '@/lib/authz';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { IncomeCategory, ExpenseCategory, FeeStatus, ChargeType, EmployeeRole, Prisma } from '@prisma/client'; // Import enums and Prisma
 import { createAuditLogEntry } from '@/lib/audit';
-
-
-// Helper to serialize Prisma objects (convert Decimals to numbers)
-const serialize = (obj: any): any => {
-    if (obj === null || obj === undefined) {
-        return obj;
-    }
-    if (Array.isArray(obj)) {
-        return obj.map(serialize);
-    }
-    if (typeof obj === 'object') {
-        // Handle Prisma Decimal
-        if (obj instanceof Prisma.Decimal) {
-            return obj.toNumber();
-        }
-        // Handle Date (to ISO string for client components if needed, but Dates are fine in RSC usually 
-        // IF they are plain objects. However, Next.js generic serialization handles dates fine usually.
-        // But preventing 'Maximum call stack' on complex circulars is good practice)
-
-        // Recursive for other objects
-        const newObj: any = {};
-        for (const key in obj) {
-            newObj[key] = serialize(obj[key]);
-        }
-        return newObj;
-    }
-    return obj;
-};
+import { serializeData as serialize } from '@/lib/utils';
 
 // --- Income Management ---
 
@@ -57,7 +31,7 @@ export type IncomeState = {
 
 export async function addIncome(prevState: IncomeState | undefined, formData: FormData): Promise<IncomeState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('payments', 'create'))) {
         return { message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -121,7 +95,7 @@ export async function addIncome(prevState: IncomeState | undefined, formData: Fo
 
 export async function getIncomeRecords() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('payments', 'view'))) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -180,7 +154,7 @@ export type ExpenseState = {
 
 export async function addExpense(prevState: ExpenseState | undefined, formData: FormData): Promise<ExpenseState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('expenses', 'create'))) {
         return { message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -241,7 +215,7 @@ export async function addExpense(prevState: ExpenseState | undefined, formData: 
 
 export async function getExpenseRecords() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('expenses', 'view'))) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -381,7 +355,7 @@ export async function calculateStudentFeeBreakdown(
 
 export async function generateChallan(studentId: string, month: string, year: number, dueDate: Date) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('fees', 'create'))) {
         return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -498,7 +472,7 @@ export async function generateBulkChallans(
     dueDate: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('fees', 'create'))) {
         return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -526,7 +500,7 @@ export async function generateChallansByFilter(
     dueDate?: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('fees', 'create'))) {
         return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -578,7 +552,7 @@ export async function generateChallansByFilter(
 
 export async function updateChallanStatus(challanId: string, newStatus: string, paidAmount?: number, paidAt?: Date) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('fees', 'edit'))) {
         return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -648,7 +622,7 @@ export type AdditionalChargeState = {
 
 export async function addAdditionalCharge(prevState: AdditionalChargeState | undefined, formData: FormData): Promise<AdditionalChargeState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('fees', 'create'))) {
         return { message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -706,7 +680,7 @@ export async function addAdditionalCharge(prevState: AdditionalChargeState | und
 
 export async function getAdditionalCharges() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('fees', 'view'))) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -755,7 +729,7 @@ export type SalaryStructureState = {
 
 export async function addSalaryStructure(prevState: SalaryStructureState | undefined, formData: FormData): Promise<SalaryStructureState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) { // Only SchoolAdmin/SuperAdmin can manage salary structures
+    if (!session.schoolId || !(await hasPermission('salaries', 'create'))) {
         return { message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -794,7 +768,7 @@ export async function addSalaryStructure(prevState: SalaryStructureState | undef
 
 export async function updateSalaryStructure(id: string, prevState: SalaryStructureState | undefined, formData: FormData): Promise<SalaryStructureState> {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'edit'))) {
         return { message: 'Access Denied: Insufficient Permissions' };
     }
 
@@ -833,7 +807,7 @@ export async function updateSalaryStructure(id: string, prevState: SalaryStructu
 
 export async function getSalaryStructures() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -851,7 +825,7 @@ export async function getSalaryStructures() {
 
 export async function getSalaryStructureById(id: string) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
         return null; // Return null if unauthorized or no schoolId
     }
 
@@ -872,7 +846,7 @@ export async function assignSalaryStructure(
     salaryStructureId: string
 ) {
     const session = await getSession();
-    if (!session.schoolId || session.role !== 'SchoolAdmin') {
+    if (!session.schoolId || !(await hasPermission('salaries', 'edit'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -914,7 +888,7 @@ export async function generateSalarySlip(
     paidAt: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'create'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -1029,7 +1003,7 @@ export async function generateBulkSalarySlips(
     paidAt: Date
 ) {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'create'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -1046,7 +1020,7 @@ export async function generateBulkSalarySlips(
 
 export async function getSalarySlips() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
         return []; // Return empty array if unauthorized or no schoolId
     }
 
@@ -1069,7 +1043,7 @@ export async function getSalarySlips() {
 }
 export async function getTeachersForFinance() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
         return [];
     }
     try {
@@ -1087,7 +1061,7 @@ export async function getTeachersForFinance() {
 
 export async function getStaffForFinance() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
         return [];
     }
     try {
@@ -1105,7 +1079,7 @@ export async function getStaffForFinance() {
 
 export async function getExecutivesForFinance() {
     const session = await getSession();
-    if (!session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.role === 'SuperAdmin')) {
+    if (!session.schoolId || !(await hasPermission('salaries', 'view'))) {
         return [];
     }
     try {

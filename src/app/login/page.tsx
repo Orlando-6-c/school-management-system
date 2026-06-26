@@ -5,6 +5,7 @@ export const runtime = 'nodejs';
 import { useActionState, Suspense } from 'react';
 import { login } from '@/actions/auth';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 function LoginForm() {
     const [state, action, pending] = useActionState(login, undefined);
@@ -90,6 +91,12 @@ export default function LoginPage() {
                 <Suspense fallback={<div className="text-white text-center">Loading...</div>}>
                     <LoginForm />
                 </Suspense>
+                <p className="text-center text-white/60 text-sm mt-6">
+                    New school?{' '}
+                    <Link href="/register" className="text-white font-semibold hover:underline">
+                        Register for free
+                    </Link>
+                </p>
             </div>
         </div>
     );

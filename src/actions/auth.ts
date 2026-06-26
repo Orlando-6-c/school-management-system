@@ -1,11 +1,13 @@
 'use server';
 
 import { getSession } from '@/lib/session';
-import { hashPassword, verifyPassword } from '@/lib/auth';
+import { verifyPassword } from '@/lib/auth';
 import db from '@/lib/db';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 const loginSchema = z.object({
     username: z.string().min(1, 'Username is required'),
@@ -22,65 +24,99 @@ export type LoginState = {
     };
 };
 
+function roleRedirect(role: string): never {
+    switch (role) {
+        case 'SchoolAdmin':
+        case 'Finance':
+            redirect('/school');
+        case 'Teacher':
+            redirect('/school/teacher');
+        case 'Student':
+            redirect('/portal/student');
+        case 'Parent':
+            redirect('/portal/parent');
+        default:
+            redirect('/school');
+    }
+}
+
+function lockoutMessage(lockedUntil: Date): string {
+    const mins = Math.ceil((lockedUntil.getTime() - Date.now()) / 60000);
+    return `Account locked due to too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`;
+}
+
 export async function login(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
     const result = loginSchema.safeParse(Object.fromEntries(formData));
 
     if (!result.success) {
-        return {
-            errors: result.error.flatten().fieldErrors,
-        };
+        return { errors: result.error.flatten().fieldErrors };
     }
 
     const { username, password, schoolSlug } = result.data;
     const session = await getSession();
+    const now = new Date();
 
-    // 1. Check SuperAdmin
-    // SuperAdmin doesn't have a schoolSlug context for login typically, OR they can login to global dashboard
-    // We assume no schoolSlug provided = SuperAdmin attempt or explicit Global Login
+    // ── SuperAdmin path ────────────────────────────────────────────────────────
     if (!schoolSlug) {
-        const superAdmin = await db.superAdmin.findUnique({
-            where: { username },
-        });
+        const superAdmin = await db.superAdmin.findUnique({ where: { username } });
 
-        if (superAdmin && (await verifyPassword(password, superAdmin.password))) {
-            session.userId = superAdmin.id;
-            session.username = superAdmin.username;
-            session.role = 'SuperAdmin';
-            session.isSuperAdmin = true;
-            session.schoolId = null;
-            session.schoolSlug = null;
-            await session.save();
-            redirect('/admin');
+        if (superAdmin) {
+            // Lockout check
+            if (superAdmin.lockedUntil && superAdmin.lockedUntil > now) {
+                return { message: lockoutMessage(superAdmin.lockedUntil) };
+            }
+
+            if (await verifyPassword(password, superAdmin.password)) {
+                // Success — reset attempts
+                await db.superAdmin.update({
+                    where: { id: superAdmin.id },
+                    data: { loginAttempts: 0, lockedUntil: null },
+                });
+                session.userId = superAdmin.id;
+                session.username = superAdmin.username;
+                session.role = 'SuperAdmin';
+                session.isSuperAdmin = true;
+                session.schoolId = null;
+                session.schoolSlug = null;
+                await session.save();
+                redirect('/admin');
+            }
+
+            // Failed — increment attempts
+            const attempts = superAdmin.loginAttempts + 1;
+            await db.superAdmin.update({
+                where: { id: superAdmin.id },
+                data: {
+                    loginAttempts: attempts,
+                    lockedUntil: attempts >= MAX_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MS) : null,
+                },
+            });
         }
     }
 
-    // 2. Check School User
-    // Requires schoolSlug to identify the school first? 
-    // If schoolSlug is provided, we look up the school, then the user in that school.
-    // If no schoolSlug, we can't easily find the user unless username is globally unique (but schema says username+school is unique).
-    // So schoolSlug is required for school users.
-
-    // 2. Check for User across schools if slug is missing
+    // ── School User — no slug: try to find unique match ───────────────────────
     if (!schoolSlug) {
-        // Try to find if this username exists in ANY school
         const users = await db.user.findMany({
             where: { username },
             include: { school: true },
         });
 
-        if (users.length === 0) {
-            return { message: 'Invalid credentials' };
-        }
-
-        if (users.length > 1) {
-            return { message: 'Multiple users found. Please provide School Slug.' };
-        }
+        if (users.length === 0) return { message: 'Invalid credentials' };
+        if (users.length > 1) return { message: 'Multiple accounts found. Please enter your school slug.' };
 
         const user = users[0];
-        if (!user.isActive) {
-            return { message: 'Your account has been disabled.' };
+
+        if (!user.isActive) return { message: 'Your account has been disabled.' };
+
+        if (user.lockedUntil && user.lockedUntil > now) {
+            return { message: lockoutMessage(user.lockedUntil) };
         }
+
         if (await verifyPassword(password, user.password)) {
+            await db.user.update({
+                where: { id: user.id },
+                data: { loginAttempts: 0, lockedUntil: null },
+            });
             session.userId = user.id;
             session.username = user.username;
             session.role = user.role;
@@ -88,42 +124,59 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
             session.schoolSlug = user.school.slug;
             session.isSuperAdmin = false;
             await session.save();
-            redirect('/dashboard');
-        }
-    } else {
-        // Specific school login
-        const school = await db.school.findUnique({
-            where: { slug: schoolSlug },
-        });
-
-        if (!school) {
-            return { message: 'School not found' };
+            roleRedirect(user.role);
         }
 
-        const user = await db.user.findUnique({
-            where: {
-                username_schoolId: {
-                    username,
-                    schoolId: school.id,
-                },
+        const attempts = user.loginAttempts + 1;
+        await db.user.update({
+            where: { id: user.id },
+            data: {
+                loginAttempts: attempts,
+                lockedUntil: attempts >= MAX_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MS) : null,
             },
         });
 
-        if (user && user.isActive && (await verifyPassword(password, user.password))) {
-            session.userId = user.id;
-            session.username = user.username;
-            session.role = user.role;
-            session.schoolId = school.id;
-            session.schoolSlug = school.slug;
-            session.isSuperAdmin = false;
-            await session.save();
-            await session.save();
-            if (user.role === 'SchoolAdmin') {
-                redirect('/school');
-            }
-            redirect('/dashboard');
-        }
+        return { message: 'Invalid credentials' };
     }
+
+    // ── School User — slug provided ────────────────────────────────────────────
+    const school = await db.school.findUnique({ where: { slug: schoolSlug } });
+    if (!school) return { message: 'School not found' };
+
+    const user = await db.user.findUnique({
+        where: { username_schoolId: { username, schoolId: school.id } },
+    });
+
+    if (!user) return { message: 'Invalid credentials' };
+    if (!user.isActive) return { message: 'Your account has been disabled.' };
+
+    if (user.lockedUntil && user.lockedUntil > now) {
+        return { message: lockoutMessage(user.lockedUntil) };
+    }
+
+    if (await verifyPassword(password, user.password)) {
+        await db.user.update({
+            where: { id: user.id },
+            data: { loginAttempts: 0, lockedUntil: null },
+        });
+        session.userId = user.id;
+        session.username = user.username;
+        session.role = user.role;
+        session.schoolId = school.id;
+        session.schoolSlug = school.slug;
+        session.isSuperAdmin = false;
+        await session.save();
+        roleRedirect(user.role);
+    }
+
+    const attempts = user.loginAttempts + 1;
+    await db.user.update({
+        where: { id: user.id },
+        data: {
+            loginAttempts: attempts,
+            lockedUntil: attempts >= MAX_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MS) : null,
+        },
+    });
 
     return { message: 'Invalid credentials' };
 }

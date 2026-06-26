@@ -9,6 +9,7 @@ import { updateStudent } from '@/actions/student'; // Import the action
 
 // We need to create a client component wrapper for the form logic to use useActionState (or useFormState)
 import EditStudentForm from './edit-form';
+import { AccountSettings } from '@/components/school/AccountSettings';
 
 export default async function EditStudentPage({ params }: { params: { id: string } }) {
     const session = await getSession();
@@ -31,6 +32,10 @@ export default async function EditStudentPage({ params }: { params: { id: string
         orderBy: { gradeLevel: 'asc' }
     });
 
+    const userAccount = await db.user.findFirst({
+        where: { studentId: id, schoolId: session.schoolId }
+    });
+
     return (
         <div className="container mx-auto py-10 max-w-4xl">
             <div className="flex justify-between items-center mb-6">
@@ -41,6 +46,14 @@ export default async function EditStudentPage({ params }: { params: { id: string
             </div>
 
             <EditStudentForm student={student} classes={classes} />
+
+            <AccountSettings
+                targetType="Student"
+                targetId={id}
+                hasAccount={!!userAccount}
+                isActive={userAccount?.isActive ?? false}
+                username={userAccount?.username}
+            />
         </div>
     );
 }

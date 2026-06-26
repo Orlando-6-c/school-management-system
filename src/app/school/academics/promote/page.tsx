@@ -7,6 +7,11 @@ import { Label } from '@/components/ui/label';
 import { promoteStudents } from '@/actions/academics';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+async function handlePromotion(formData: FormData) {
+    'use server';
+    await promoteStudents(formData);
+}
+
 export default async function PromoteStudentsPage() {
     const session = await getSession();
     if (!session.schoolId) redirect('/login');
@@ -26,7 +31,7 @@ export default async function PromoteStudentsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={promoteStudents} className="space-y-6">
+                    <form action={handlePromotion} className="space-y-6">
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fromClassId">Promote From (Source Class)</Label>

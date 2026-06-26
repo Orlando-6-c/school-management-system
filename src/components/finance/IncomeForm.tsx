@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { IncomeCategory } from '@prisma/client';
@@ -21,9 +21,7 @@ import { format } from 'date-fns';
 const formSchema = z.object({
     description: z.string().min(1, 'Description is required'),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
-    category: z.nativeEnum(IncomeCategory, {
-        errorMap: () => ({ message: 'Invalid income category' }),
-    }),
+    category: z.nativeEnum(IncomeCategory, { message: 'Invalid income category' }),
     source: z.string().min(1, 'Source is required'),
     paymentMethod: z.string().min(1, 'Payment method is required'),
     date: z.string().min(1, 'Date is required'), // Will be converted to Date object in action
@@ -45,7 +43,7 @@ export default function IncomeForm({ students, defaultValues }: IncomeFormProps)
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm<IncomeFormValues>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as Resolver<IncomeFormValues>,
         defaultValues: {
             date: format(new Date(), 'yyyy-MM-dd'),
             studentId: '',

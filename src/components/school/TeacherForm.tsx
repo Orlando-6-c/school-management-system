@@ -133,7 +133,8 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" defaultValue={initialData?.email} />
+                            <Input id="email" name="email" type="email" defaultValue={initialData?.email} required />
+                            {state?.errors?.email && <p className="text-red-500 text-xs">{state.errors.email}</p>}
                         </div>
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="address">Address</Label>

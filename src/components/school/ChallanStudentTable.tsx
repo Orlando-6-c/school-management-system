@@ -76,7 +76,7 @@ export function ChallanStudentTable({ students, selectedStudents, onSelectionCha
                     </TableRow>
                 ) : (
                     students.map((student) => (
-                        <TableRow key={student.id} selected={selectedStudents.has(student.id)}>
+                        <TableRow key={student.id}>
                             <TableCell>
                                 <Checkbox
                                     checked={selectedStudents.has(student.id)}

@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ExpenseCategory } from '@prisma/client';
@@ -21,9 +21,7 @@ import { format } from 'date-fns';
 const formSchema = z.object({
     description: z.string().min(1, 'Description is required'),
     amount: z.coerce.number().min(0.01, 'Amount must be positive'),
-    category: z.nativeEnum(ExpenseCategory, {
-        errorMap: () => ({ message: 'Invalid expense category' }),
-    }),
+    category: z.nativeEnum(ExpenseCategory, { message: 'Invalid expense category' }),
     paidTo: z.string().min(1, 'Recipient is required'),
     paymentMethod: z.string().min(1, 'Payment method is required'),
     date: z.string().min(1, 'Date is required'), // Will be converted to Date object in action
@@ -43,7 +41,7 @@ export default function ExpenseForm({ defaultValues }: ExpenseFormProps) {
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm<ExpenseFormValues>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as Resolver<ExpenseFormValues>,
         defaultValues: {
             date: format(new Date(), 'yyyy-MM-dd'),
             reference: '',

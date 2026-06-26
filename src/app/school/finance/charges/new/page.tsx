@@ -16,7 +16,7 @@ export default async function NewAdditionalChargePage() {
     }
 
     const students = await getStudents(session.schoolId);
-    const classes = await getClasses(session.schoolId);
+    const classes = await getClasses();
 
     return (
         <div className="space-y-6">

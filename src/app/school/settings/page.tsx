@@ -2,6 +2,7 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { getSchoolSettings } from '@/actions/settings';
 import SettingsForm from '@/components/school/SettingsForm';
+import BankAccountsManager from '@/components/school/BankAccountsManager';
 
 export const runtime = 'nodejs';
 
@@ -26,13 +27,14 @@ export default async function SettingsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-5xl">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">School Settings</h1>
                 <p className="text-muted-foreground mt-2">Manage your school configuration and preferences.</p>
             </div>
 
             <SettingsForm initialSettings={settings} />
+            <BankAccountsManager bankAccounts={settings.bankAccounts} />
         </div>
     );
 }

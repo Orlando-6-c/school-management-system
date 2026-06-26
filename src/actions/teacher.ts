@@ -1,11 +1,11 @@
 'use server';
 
 import { getSession } from '@/lib/session';
+import { hasPermission } from '@/lib/authz';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { hashPassword } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
 
 const teacherSchema = z.object({
     firstName: z.string().min(1, "First name is required"),
@@ -28,11 +28,12 @@ export type TeacherState = {
     message?: string;
     errors?: Record<string, string[]>;
     teacherId?: string;
+    tempPassword?: string;
 };
 
 export async function addTeacher(prevState: TeacherState | undefined, formData: FormData): Promise<TeacherState> {
     const session = await getSession();
-    if (!session.schoolId) return { message: 'Unauthorized' };
+    if (!session.schoolId || !(await hasPermission('teachers', 'create'))) return { message: 'Unauthorized' };
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -60,8 +61,7 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
                 data: {
                     schoolId: session.schoolId!,
                     ...data,
-                    // Convert salary to Prisma Decimal if provided
-                    salary: data.salary !== undefined ? new Prisma.Decimal(data.salary) : null,
+                    salary: data.salary ?? null,
                     // Ensure explicit nulls for optional fields if they are missing in data object
                     address: data.address || null,
                     experience: data.experience || null,
@@ -70,23 +70,24 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
             });
 
             // Create User Account for the Teacher
-            const hashedPassword = await hashPassword("password"); // Temporary default password
+            const hashedPassword = await hashPassword(teacher.phone);
 
             await tx.user.create({
                 data: {
                     schoolId: session.schoolId!,
-                    username: teacher.email, // Using teacher's email as username
+                    username: teacher.cnic, // Using teacher's CNIC
                     password: hashedPassword,
-                    role: 'Teacher', // Assign 'Teacher' role
+                    role: 'Teacher',
+                    teacherId: teacher.id,
                     isActive: true,
                 }
             });
 
-            return teacher;
+            return { ...teacher, tempPassword: teacher.phone };
         });
 
         revalidatePath('/school/teachers');
-        return { success: true, message: 'Teacher added successfully', teacherId: newTeacher.id };
+        return { success: true, message: 'Teacher added successfully', teacherId: newTeacher.id, tempPassword: (newTeacher as any).tempPassword };
     } catch (error: any) {
         console.error('Add Teacher Error:', error);
         if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
@@ -98,7 +99,7 @@ export async function addTeacher(prevState: TeacherState | undefined, formData: 
 
 export async function updateTeacher(id: string, prevState: TeacherState | undefined, formData: FormData): Promise<TeacherState> {
     const session = await getSession();
-    if (!session.schoolId) return { message: 'Unauthorized' };
+    if (!session.schoolId || !(await hasPermission('teachers', 'edit'))) return { message: 'Unauthorized' };
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -124,8 +125,7 @@ export async function updateTeacher(id: string, prevState: TeacherState | undefi
             where: { id, schoolId: session.schoolId },
             data: {
                 ...data,
-                // Convert salary to Prisma Decimal if provided
-                salary: data.salary !== undefined ? new Prisma.Decimal(data.salary) : undefined,
+                salary: data.salary ?? undefined,
                 email: data.email || undefined,
                 address: data.address || null,
                 experience: data.experience || null,
@@ -144,7 +144,7 @@ export async function updateTeacher(id: string, prevState: TeacherState | undefi
 
 export async function deleteTeacher(teacherId: string, reason?: string) {
     const session = await getSession();
-    if (session.role !== 'SchoolAdmin' || !session.schoolId) {
+    if (!session.schoolId || !(await hasPermission('teachers', 'delete'))) {
         return { success: false, message: 'Unauthorized' };
     }
 
@@ -165,7 +165,7 @@ export async function deleteTeacher(teacherId: string, reason?: string) {
             // Also deactivate the corresponding user account
             await tx.user.updateMany({
                 where: {
-                    username: teacher.email, // Using teacher's email as username
+                    teacherId: teacher.id,
                     schoolId: session.schoolId!,
                 },
                 data: {

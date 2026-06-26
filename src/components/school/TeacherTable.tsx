@@ -25,11 +25,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { deleteTeacher } from '@/actions/teacher';
-import { Session } from '@/lib/session';
+
 
 interface TeacherTableProps {
     teachers: any[]; // Replace 'any' with actual Teacher type later
-    session: Session; // Assuming Session type is exported from '@/lib/session'
+    session: any; // Assuming Session type is exported from '@/lib/session'
 }
 
 export function TeacherTable({ teachers, session }: TeacherTableProps) {
@@ -73,6 +73,7 @@ export function TeacherTable({ teachers, session }: TeacherTableProps) {
                         <TableHead>Qualification</TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead>Salary</TableHead>
+                        <TableHead>Account</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -113,11 +114,20 @@ export function TeacherTable({ teachers, session }: TeacherTableProps) {
                                 <TableCell>{teacher.qualification}</TableCell>
                                 <TableCell>{teacher.phone}</TableCell>
                                 <TableCell>
-                                    {teacher.salary 
-                                        ? typeof teacher.salary === 'number' 
-                                            ? teacher.salary.toLocaleString() 
+                                    {teacher.salary
+                                        ? typeof teacher.salary === 'number'
+                                            ? teacher.salary.toLocaleString()
                                             : Number(teacher.salary).toLocaleString()
                                         : 'N/A'}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 flex max-w-min rounded">
+                                        ID:{teacher.cnic}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground mt-1 tracking-widest uppercase flex flex-col gap-0.5">
+                                        <span>Teacher</span>
+                                        <span>Pass: {teacher.phone}</span>
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">

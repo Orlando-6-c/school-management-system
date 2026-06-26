@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { TeacherTable } from '@/components/school/TeacherTable'; // Import the new component
+import { serializeData } from '@/lib/utils';
 import {
     Card,
     CardContent,
@@ -53,7 +54,7 @@ export default async function TeachersPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="print:p-0">
-                    <TeacherTable teachers={teachers} session={session} />
+                    <TeacherTable teachers={serializeData(teachers)} session={serializeData(session)} />
                 </CardContent>
             </Card>
         </div>

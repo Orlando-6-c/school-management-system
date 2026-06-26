@@ -13,6 +13,7 @@ import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import PrintDirectoryButton from '@/components/school/PrintDirectoryButton';
 import { StudentTable } from '@/components/school/StudentTable'; // Import the new component
+import { serializeData } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -40,7 +41,7 @@ export default async function StudentsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">Student Directory</h1>
                 <div className="flex gap-2">
-                    <PrintDirectoryButton classes={classes} />
+                    <PrintDirectoryButton classes={serializeData(classes)} />
                     <Link href="/school/students/new">
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
@@ -69,7 +70,7 @@ export default async function StudentsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="print:p-0">
-                    <StudentTable students={students} session={session} classes={classes} />
+                    <StudentTable students={serializeData(students)} session={serializeData(session)} classes={serializeData(classes)} />
                 </CardContent>
             </Card>
         </div>

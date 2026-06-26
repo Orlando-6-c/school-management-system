@@ -1,6 +1,10 @@
 import 'server-only';
 import { PrismaClient } from '@prisma/client';
 
+// Plain client used only for audit log writes inside the extension callback,
+// avoids a recursive extended-type loop that confuses the TypeScript checker.
+const auditPrisma = new PrismaClient();
+
 const prismaClientSingleton = () => {
     return new PrismaClient().$extends({
         query: {
@@ -26,8 +30,7 @@ const prismaClientSingleton = () => {
                                 const { getSession } = await import('./session');
                                 const session = await getSession();
                                 if (session && session.userId && session.schoolId) {
-                                    const rawDb = globalThis.prismaGlobal || new PrismaClient();
-                                    await rawDb.auditLog.create({
+                                    await auditPrisma.auditLog.create({
                                         data: {
                                             schoolId: session.schoolId,
                                             action: `${operation}_${model}`,
@@ -38,7 +41,7 @@ const prismaClientSingleton = () => {
                                         }
                                     });
                                 }
-                            } catch (e) {
+                            } catch {
                                 // Swallow error to prevent async crash
                             }
                         });
