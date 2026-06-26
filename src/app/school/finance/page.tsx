@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { getIncomeRecords, getExpenseRecords } from '@/actions/finance';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus, ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownRight, Banknote } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -55,7 +55,7 @@ export default async function FinancePage() {
                         <ArrowUpRight className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold text-foreground">Rs {totalIncome.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground mt-1">All time income</p>
                     </CardContent>
                 </Card>
@@ -65,18 +65,18 @@ export default async function FinancePage() {
                         <ArrowDownRight className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground">${totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold text-foreground">Rs {totalExpense.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground mt-1">All time expenses</p>
                     </CardContent>
                 </Card>
                 <Card className={`border-l-4 shadow-sm ${netProfit >= 0 ? 'border-l-blue-500' : 'border-l-orange-500'}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Net Balance</CardTitle>
-                        <DollarSign className={`h-4 w-4 ${netProfit >= 0 ? 'text-blue-500' : 'text-orange-500'}`} />
+                        <Banknote className={`h-4 w-4 ${netProfit >= 0 ? 'text-blue-500' : 'text-orange-500'}`} />
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                            ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            Rs {netProfit.toLocaleString()}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Available funds</p>
                     </CardContent>
@@ -111,7 +111,7 @@ export default async function FinancePage() {
                                             </div>
                                         </div>
                                         <div className={`font-semibold ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {transaction.type === 'Income' ? '+' : '-'}${Number(transaction.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {transaction.type === 'Income' ? '+' : '-'}Rs {Number(transaction.amount || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 ))
