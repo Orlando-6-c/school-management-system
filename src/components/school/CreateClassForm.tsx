@@ -1,7 +1,7 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
-import { createClass } from '@/actions/academics'; // Reusing action
+import { useActionState, useEffect, useState } from 'react';
+import { createClass } from '@/actions/academics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,17 +14,24 @@ interface Teacher {
 }
 
 export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
-    const formRef = useRef<HTMLFormElement>(null);
     const [state, action, pending] = useActionState(createClass, undefined);
+
+    // Controlled fields preserve values on validation error; reset only on success
+    const [section, setSection] = useState('');
+    const [fee, setFee] = useState('0');
+    const [gradeName, setGradeName] = useState('');
+    const [teacherId, setTeacherId] = useState('');
 
     useEffect(() => {
         if (state?.success) {
-            formRef.current?.reset();
+            setSection('');
+            setFee('0');
+            setGradeName('');
+            setTeacherId('');
         }
-    }, [state]);
+    }, [state?.success]);
 
-    // Simple inline form
-    const inputClasses = "bg-card text-foreground border-input focus:ring-gray-400 focus:border-gray-400";
+    const inputClasses = 'bg-card text-foreground border-input focus:ring-gray-400 focus:border-gray-400';
 
     return (
         <Card className="bg-card shadow-sm border-border">
@@ -32,9 +39,9 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
                 <CardTitle>Add New Class</CardTitle>
             </CardHeader>
             <CardContent>
-                <form ref={formRef} action={action} className="grid gap-4">
+                <form action={action} className="grid gap-4">
                     {state?.message && (
-                        <div className={`text-sm p-2 rounded ${state.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <div className={`text-sm p-2 rounded ${state.success ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
                             {state.message}
                         </div>
                     )}
@@ -43,6 +50,8 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
                         <Label htmlFor="name" className="text-muted-foreground">Class Name</Label>
                         <select
                             name="name"
+                            value={gradeName}
+                            onChange={(e) => setGradeName(e.target.value)}
                             className={`flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${inputClasses}`}
                             required
                         >
@@ -65,19 +74,34 @@ export function CreateClassForm({ teachers }: { teachers: Teacher[] }) {
 
                     <div className="grid gap-2">
                         <Label htmlFor="section" className="text-muted-foreground">Section (Optional)</Label>
-                        <Input name="section" placeholder="e.g. A" className={inputClasses} />
+                        <Input
+                            name="section"
+                            placeholder="e.g. A"
+                            value={section}
+                            onChange={(e) => setSection(e.target.value)}
+                            className={inputClasses}
+                        />
                     </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="monthlyTuitionFee" className="text-muted-foreground">Monthly Tuition Fee</Label>
-                        {/* Input type number, min 0 */}
-                        <Input name="monthlyTuitionFee" type="number" min="0" required defaultValue="0" className={inputClasses} />
+                        <Input
+                            name="monthlyTuitionFee"
+                            type="number"
+                            min="0"
+                            required
+                            value={fee}
+                            onChange={(e) => setFee(e.target.value)}
+                            className={inputClasses}
+                        />
                     </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="classTeacherId" className="text-muted-foreground">Designated Teacher</Label>
                         <select
                             name="classTeacherId"
+                            value={teacherId}
+                            onChange={(e) => setTeacherId(e.target.value)}
                             className={`flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${inputClasses}`}
                         >
                             <option value="">Select Teacher</option>

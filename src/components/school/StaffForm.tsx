@@ -29,8 +29,25 @@ export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
     const action = isEdit ? updateStaff : addStaff;
 
     const [state, formAction, isPending] = useActionState<StaffState | undefined, FormData>(action, undefined);
+
+    // Controlled inputs — prevents React 19 from wiping values on action error
+    const [form, setForm] = useState({
+        name: defaultValues?.name ?? '',
+        fatherName: defaultValues?.fatherName ?? '',
+        cnic: defaultValues?.cnic ?? '',
+        dateOfBirth: defaultValues?.dateOfBirth ?? '',
+        contact: defaultValues?.contact ?? '',
+        role: defaultValues?.role ?? '',
+        workingHours: defaultValues?.workingHours ?? '',
+        photograph: defaultValues?.photograph ?? '',
+    });
     const [gender, setGender] = useState<string>(defaultValues?.gender ?? '');
     const [userRole, setUserRole] = useState<string>('');
+
+    const field =
+        (name: keyof typeof form) =>
+        (e: React.ChangeEvent<HTMLInputElement>) =>
+            setForm((prev) => ({ ...prev, [name]: e.target.value }));
 
     useEffect(() => {
         if (state?.success) router.push('/school/staff');
@@ -49,12 +66,12 @@ export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="name">Full Name *</Label>
-                    <Input id="name" name="name" defaultValue={defaultValues?.name} />
+                    <Input id="name" name="name" value={form.name} onChange={field('name')} />
                     {state?.errors?.name && <p className="text-xs text-destructive">{state.errors.name[0]}</p>}
                 </div>
                 <div className="space-y-1.5">
                     <Label htmlFor="fatherName">Father Name *</Label>
-                    <Input id="fatherName" name="fatherName" defaultValue={defaultValues?.fatherName} />
+                    <Input id="fatherName" name="fatherName" value={form.fatherName} onChange={field('fatherName')} />
                     {state?.errors?.fatherName && <p className="text-xs text-destructive">{state.errors.fatherName[0]}</p>}
                 </div>
             </div>
@@ -62,12 +79,12 @@ export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="cnic">CNIC *</Label>
-                    <Input id="cnic" name="cnic" placeholder="3520212345671" defaultValue={defaultValues?.cnic} />
+                    <Input id="cnic" name="cnic" placeholder="3520212345671" value={form.cnic} onChange={field('cnic')} />
                     {state?.errors?.cnic && <p className="text-xs text-destructive">{state.errors.cnic[0]}</p>}
                 </div>
                 <div className="space-y-1.5">
                     <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                    <Input id="dateOfBirth" name="dateOfBirth" type="date" defaultValue={defaultValues?.dateOfBirth} />
+                    <Input id="dateOfBirth" name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={field('dateOfBirth')} />
                     {state?.errors?.dateOfBirth && <p className="text-xs text-destructive">{state.errors.dateOfBirth[0]}</p>}
                 </div>
             </div>
@@ -75,7 +92,7 @@ export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="contact">Contact *</Label>
-                    <Input id="contact" name="contact" placeholder="03001234567" defaultValue={defaultValues?.contact} />
+                    <Input id="contact" name="contact" placeholder="03001234567" value={form.contact} onChange={field('contact')} />
                     {state?.errors?.contact && <p className="text-xs text-destructive">{state.errors.contact[0]}</p>}
                 </div>
                 <div className="space-y-1.5">
@@ -95,19 +112,19 @@ export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="role">Designation / Role *</Label>
-                    <Input id="role" name="role" placeholder="e.g. Peon, Security Guard, Librarian" defaultValue={defaultValues?.role} />
+                    <Input id="role" name="role" placeholder="e.g. Peon, Security Guard, Librarian" value={form.role} onChange={field('role')} />
                     {state?.errors?.role && <p className="text-xs text-destructive">{state.errors.role[0]}</p>}
                 </div>
                 <div className="space-y-1.5">
                     <Label htmlFor="workingHours">Working Hours *</Label>
-                    <Input id="workingHours" name="workingHours" placeholder="e.g. 8 AM – 4 PM" defaultValue={defaultValues?.workingHours} />
+                    <Input id="workingHours" name="workingHours" placeholder="e.g. 8 AM – 4 PM" value={form.workingHours} onChange={field('workingHours')} />
                     {state?.errors?.workingHours && <p className="text-xs text-destructive">{state.errors.workingHours[0]}</p>}
                 </div>
             </div>
 
             <div className="space-y-1.5">
                 <Label htmlFor="photograph">Photo URL (optional)</Label>
-                <Input id="photograph" name="photograph" placeholder="https://..." defaultValue={defaultValues?.photograph} />
+                <Input id="photograph" name="photograph" placeholder="https://..." value={form.photograph} onChange={field('photograph')} />
             </div>
 
             {!isEdit && (

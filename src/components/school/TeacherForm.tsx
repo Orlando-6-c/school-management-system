@@ -17,29 +17,45 @@ const initialState: TeacherState = {
 
 export default function TeacherForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
-    const updateTeacherWithId = initialData ? updateTeacher.bind(null, initialData.id) : null;
-    const action = initialData ? updateTeacherWithId! : addTeacher;
+    const action = initialData ? updateTeacher.bind(null, initialData.id) : addTeacher;
 
-    const [state, formAction] = useActionState(action, initialState);
-    // Add pending state manually since useActionState's pending is only for the submission itself, 
-    // but we might want to track it for disables.
-    // Actually useFormStatus is better for buttons, but for redirect we use useEffect.
+    // Use all 3 return values — isPending replaces the old manual setPending state
+    const [state, formAction, isPending] = useActionState(action, initialState);
 
-    // We need to use useFormStatus in a child or just rely on state.success
-    const [pending, setPending] = useState(false);
+    // Controlled state preserves user input when the server action returns validation errors.
+    // React 19 resets uncontrolled (defaultValue) inputs after any form action completes.
+    const [form, setForm] = useState({
+        firstName: initialData?.firstName ?? '',
+        lastName: initialData?.lastName ?? '',
+        gender: initialData?.gender ?? 'Male',
+        cnic: initialData?.cnic ?? '',
+        photograph: initialData?.photograph ?? '',
+        qualification: initialData?.qualification ?? '',
+        subject: initialData?.subject ?? '',
+        experience: initialData?.experience ?? '',
+        joiningDate: initialData?.joiningDate
+            ? new Date(initialData.joiningDate).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0],
+        salary: initialData?.salary?.toString() ?? '',
+        phone: initialData?.phone ?? '',
+        email: initialData?.email ?? '',
+        address: initialData?.address ?? '',
+    });
 
     useEffect(() => {
         if (state?.success) {
             router.push('/school/teachers');
-            router.refresh(); // Refresh to show new data
+            router.refresh();
         }
     }, [state?.success, router]);
 
+    const field =
+        (name: keyof typeof form) =>
+        (e: React.ChangeEvent<HTMLInputElement>) =>
+            setForm((prev) => ({ ...prev, [name]: e.target.value }));
+
     return (
-        <form action={(formData) => {
-            setPending(true);
-            formAction(formData);
-        }}>
+        <form action={formAction}>
             <div className="grid gap-6">
                 {/* Profile Section */}
                 <Card className="border-border">
@@ -50,17 +66,19 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                     <CardContent className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
-                            <Input id="firstName" name="firstName" defaultValue={initialData?.firstName} required />
+                            <Input id="firstName" name="firstName" value={form.firstName} onChange={field('firstName')} required />
                             {state?.errors?.firstName && <p className="text-red-500 text-xs">{state.errors.firstName}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" name="lastName" defaultValue={initialData?.lastName} required />
+                            <Input id="lastName" name="lastName" value={form.lastName} onChange={field('lastName')} required />
                             {state?.errors?.lastName && <p className="text-red-500 text-xs">{state.errors.lastName}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="gender">Gender</Label>
-                            <Select name="gender" defaultValue={initialData?.gender || "Male"} required>
+                            {/* hidden input carries the value; Select is the visible control */}
+                            <input type="hidden" name="gender" value={form.gender} />
+                            <Select value={form.gender} onValueChange={(v) => setForm((p) => ({ ...p, gender: v }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Gender" />
                                 </SelectTrigger>
@@ -72,12 +90,12 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="cnic">CNIC</Label>
-                            <Input id="cnic" name="cnic" placeholder="12345-1234567-1" defaultValue={initialData?.cnic} required />
+                            <Input id="cnic" name="cnic" placeholder="12345-1234567-1" value={form.cnic} onChange={field('cnic')} required />
                             {state?.errors?.cnic && <p className="text-red-500 text-xs">{state.errors.cnic}</p>}
                         </div>
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="photograph">Photograph URL</Label>
-                            <Input id="photograph" name="photograph" placeholder="https://..." defaultValue={initialData?.photograph} />
+                            <Input id="photograph" name="photograph" placeholder="https://..." value={form.photograph} onChange={field('photograph')} />
                         </div>
                     </CardContent>
                 </Card>
@@ -90,17 +108,17 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                     <CardContent className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="qualification">Qualification</Label>
-                            <Input id="qualification" name="qualification" defaultValue={initialData?.qualification} required />
+                            <Input id="qualification" name="qualification" value={form.qualification} onChange={field('qualification')} required />
                             {state?.errors?.qualification && <p className="text-red-500 text-xs">{state.errors.qualification}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="subject">Main Subject</Label>
-                            <Input id="subject" name="subject" defaultValue={initialData?.subject} required />
+                            <Input id="subject" name="subject" value={form.subject} onChange={field('subject')} required />
                             {state?.errors?.subject && <p className="text-red-500 text-xs">{state.errors.subject}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="experience">Experience</Label>
-                            <Input id="experience" name="experience" placeholder="e.g. 5 Years" defaultValue={initialData?.experience} />
+                            <Input id="experience" name="experience" placeholder="e.g. 5 Years" value={form.experience} onChange={field('experience')} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="joiningDate">Joining Date</Label>
@@ -108,13 +126,14 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                                 id="joiningDate"
                                 name="joiningDate"
                                 type="date"
-                                defaultValue={initialData?.joiningDate ? new Date(initialData.joiningDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                                value={form.joiningDate}
+                                onChange={field('joiningDate')}
                                 required
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="salary">Monthly Salary</Label>
-                            <Input id="salary" name="salary" type="number" defaultValue={initialData?.salary} required />
+                            <Input id="salary" name="salary" type="number" value={form.salary} onChange={field('salary')} required />
                             {state?.errors?.salary && <p className="text-red-500 text-xs">{state.errors.salary}</p>}
                         </div>
                     </CardContent>
@@ -128,23 +147,23 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                     <CardContent className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone</Label>
-                            <Input id="phone" name="phone" defaultValue={initialData?.phone} required />
+                            <Input id="phone" name="phone" value={form.phone} onChange={field('phone')} required />
                             {state?.errors?.phone && <p className="text-red-500 text-xs">{state.errors.phone}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" defaultValue={initialData?.email} required />
+                            <Input id="email" name="email" type="email" value={form.email} onChange={field('email')} required />
                             {state?.errors?.email && <p className="text-red-500 text-xs">{state.errors.email}</p>}
                         </div>
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="address">Address</Label>
-                            <Input id="address" name="address" defaultValue={initialData?.address} />
+                            <Input id="address" name="address" value={form.address} onChange={field('address')} />
                         </div>
                     </CardContent>
                 </Card>
 
                 {state?.message && !state.success && (
-                    <div className="p-4 bg-red-50 text-red-600 rounded-md">
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800">
                         {state.message}
                     </div>
                 )}
@@ -153,8 +172,8 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                     <Button variant="outline" type="button" onClick={() => router.back()}>
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={pending}>
-                        {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" disabled={isPending}>
+                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {initialData ? 'Update Teacher' : 'Add Teacher'}
                     </Button>
                 </div>
