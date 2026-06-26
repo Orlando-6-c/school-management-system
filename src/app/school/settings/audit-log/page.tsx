@@ -12,10 +12,10 @@ export const runtime = 'nodejs';
 const PAGE_SIZE = 50;
 
 function actionColor(action: string) {
-    if (action.startsWith('delete')) return 'bg-red-100 text-red-800';
-    if (action.startsWith('create')) return 'bg-green-100 text-green-800';
-    if (action.startsWith('update') || action.startsWith('upsert')) return 'bg-blue-100 text-blue-800';
-    return 'bg-gray-100 text-gray-700';
+    if (action.startsWith('delete')) return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+    if (action.startsWith('create')) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    if (action.startsWith('update') || action.startsWith('upsert')) return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    return 'bg-muted text-muted-foreground';
 }
 
 export default async function SchoolAuditLogPage({

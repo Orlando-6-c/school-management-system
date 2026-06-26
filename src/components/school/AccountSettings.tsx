@@ -55,7 +55,7 @@ export function AccountSettings({ targetType, targetId, hasAccount, isActive, us
                             variant="outline"
                             onClick={handleReset}
                             disabled={isPending || !isActive}
-                            className={`border-indigo-600 text-indigo-600 hover:bg-indigo-50 ${isPending ? 'opacity-50' : ''}`}
+                            className={`border-violet-600 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 ${isPending ? 'opacity-50' : ''}`}
                         >
                             {isPending ? "Resetting..." : "Reset Password"}
                         </Button>
@@ -63,12 +63,12 @@ export function AccountSettings({ targetType, targetId, hasAccount, isActive, us
                 </div>
 
                 {tempPassword && (
-                    <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-md">
-                        <p className="text-sm font-semibold text-indigo-900">Password Reset Successful!</p>
-                        <p className="text-sm text-indigo-800 mt-1">
-                            The new temporary password is: <strong className="font-mono text-lg bg-white border border-indigo-300 px-3 py-1 ml-2 select-all rounded">{tempPassword}</strong>
+                    <div className="mt-4 p-4 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 rounded-md">
+                        <p className="text-sm font-semibold text-violet-900 dark:text-violet-200">Password Reset Successful!</p>
+                        <p className="text-sm text-violet-800 dark:text-violet-300 mt-1">
+                            The new temporary password is: <strong className="font-mono text-lg bg-card border border-border px-3 py-1 ml-2 select-all rounded">{tempPassword}</strong>
                         </p>
-                        <p className="text-xs text-indigo-600 mt-2">Please copy this and securely hand it back to the user. This will not be shown again.</p>
+                        <p className="text-xs text-violet-600 dark:text-violet-400 mt-2">Please copy this and securely hand it back to the user. This will not be shown again.</p>
                     </div>
                 )}
             </CardContent>

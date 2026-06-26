@@ -14,18 +14,16 @@ export default async function AcademicsPage() {
     if (!session.schoolId) {
         return (
             <div className="p-6">
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                    <div className="flex">
-                        <div className="ml-3">
-                            <h3 className="text-sm font-medium text-yellow-800">
-                                No School Selected
-                            </h3>
-                            <div className="mt-2 text-sm text-yellow-700">
-                                <p>
-                                    You are logged in as a user without a direct school association (e.g. Super Admin).
-                                    Please select a school to view academics.
-                                </p>
-                            </div>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                            No School Selected
+                        </h3>
+                        <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                            <p>
+                                You are logged in as a user without a direct school association (e.g. Super Admin).
+                                Please select a school to view academics.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -119,11 +117,11 @@ export default async function AcademicsPage() {
                                             {/* Defensive check for teacher assignments and teacher object */}
                                             {cls.teacherAssignments && cls.teacherAssignments.length > 0 && cls.teacherAssignments[0].teacher
                                                 ? `${cls.teacherAssignments[0].teacher.firstName} ${cls.teacherAssignments[0].teacher.lastName}`
-                                                : <span className="text-gray-400 italic">None</span>}
+                                                : <span className="text-muted-foreground italic">None</span>}
                                         </span>
                                     </div>
-                                    <div className="pt-2 border-t border-gray-100">
-                                        <span className="text-xs text-gray-400">Hex Code: {cls.hexCode}</span>
+                                    <div className="pt-2 border-t border-border">
+                                        <span className="text-xs text-muted-foreground">Hex Code: {cls.hexCode}</span>
                                     </div>
                                 </div>
                             </CardContent>

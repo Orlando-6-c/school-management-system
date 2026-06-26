@@ -20,7 +20,7 @@ export default function HomeworkManager({ assignments, homeworks }: { assignment
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
-                <form action={formAction} className="bg-white p-6 rounded-xl border border-border mt-0 shadow-sm space-y-4 sticky top-6">
+                <form action={formAction} className="bg-card p-6 rounded-xl border border-border mt-0 shadow-sm space-y-4 sticky top-6">
                     <h3 className="text-lg font-semibold text-foreground">Post New Homework</h3>
 
                     <div className="space-y-2">
@@ -69,7 +69,7 @@ export default function HomeworkManager({ assignments, homeworks }: { assignment
             </div>
 
             <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden text-foreground">
+                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden text-foreground">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-muted px-4 py-3 border-b border-border font-medium">
                             <tr>

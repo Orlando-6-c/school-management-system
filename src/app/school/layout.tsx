@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { getCurrentUserWithPermissions, userCan } from '@/lib/authz';
-import { SchoolSidebar } from '@/components/school/SchoolSidebar';
+import { SchoolShell } from '@/components/school/SchoolShell';
 
 export const runtime = 'nodejs';
 
@@ -50,16 +50,14 @@ export default async function SchoolLayout({
     };
 
     return (
-        <div className="min-h-screen bg-muted flex">
-            <SchoolSidebar
-                schoolName={school.name}
-                schoolSlug={school.slug}
-                userName={actor.username}
-                userRole={actor.role}
-                nav={nav}
-            />
-
-            <main className="flex-1 ml-64 p-8">{children}</main>
-        </div>
+        <SchoolShell
+            schoolName={school.name}
+            schoolSlug={school.slug}
+            userName={actor.username}
+            userRole={actor.role}
+            nav={nav}
+        >
+            {children}
+        </SchoolShell>
     );
 }

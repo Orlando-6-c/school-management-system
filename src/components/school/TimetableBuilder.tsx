@@ -283,11 +283,11 @@ export default function TimetableBuilder({ classes, teachers, timetables }: { cl
             )}
 
             {selectedClassId && !showConfig && gridTemplate.length > 0 && showAutoFillPanel && (
-                <div className="bg-white border-2 border-indigo-100 p-6 rounded-xl shadow-sm max-w-4xl mx-auto print:hidden">
+                <div className="bg-card border-2 border-border p-6 rounded-xl shadow-sm max-w-4xl mx-auto print:hidden">
                     <h3 className="text-xl font-bold flex items-center text-indigo-800 mb-4"><Wand2 className="mr-2" /> Auto-Fill Configuration</h3>
                     <div className="flex justify-between items-center mb-6">
                         <p className="text-sm text-slate-500 max-w-md">Add the subjects, their respective teachers, and weekly frequency. The engine will smartly distribute them across the active days.</p>
-                        <div className="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-lg flex flex-col items-end">
+                        <div className="bg-indigo-50 border border-border px-4 py-2 rounded-lg flex flex-col items-end">
                             <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Weekly Slot Usage</span>
                             <div className="text-lg font-black text-indigo-700">
                                 {allocations.reduce((sum, a) => sum + a.frequency, 0)} / {ACTIVE_DAYS_DEFAULT.length * gridTemplate.filter(s => s.type === 'Lecture').length}
@@ -296,7 +296,7 @@ export default function TimetableBuilder({ classes, teachers, timetables }: { cl
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6 flex items-end gap-3 flex-wrap">
+                    <div className="bg-slate-50 p-4 rounded-lg border border-border mb-6 flex items-end gap-3 flex-wrap">
                         <div className="flex-1 min-w-[200px] space-y-1">
                             <label className="text-xs font-bold text-slate-600">Subject Name</label>
                             <Input placeholder="E.g. Mathematics" value={newAllocSubject} onChange={e => setNewAllocSubject(e.target.value)} />
@@ -304,7 +304,7 @@ export default function TimetableBuilder({ classes, teachers, timetables }: { cl
                         <div className="flex-1 min-w-[200px] space-y-1">
                             <label className="text-xs font-bold text-slate-600">Teacher</label>
                             <Select value={newAllocTeacher} onValueChange={setNewAllocTeacher}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="Select" /></SelectTrigger>
+                                <SelectTrigger className="bg-card"><SelectValue placeholder="Select" /></SelectTrigger>
                                 <SelectContent>
                                     {teachers.map(t => <SelectItem key={t.id} value={t.id}>{t.firstName} {t.lastName}</SelectItem>)}
                                 </SelectContent>
@@ -330,7 +330,7 @@ export default function TimetableBuilder({ classes, teachers, timetables }: { cl
                             <h4 className="text-sm font-bold text-slate-700">Subject Allocations Queue</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                 {allocations.map(a => (
-                                    <div key={a.id} className="bg-white p-3 border border-slate-200 rounded flex justify-between items-center shadow-sm">
+                                    <div key={a.id} className="bg-card p-3 border border-border rounded flex justify-between items-center shadow-sm">
                                         <div>
                                             <div className="font-bold text-sm text-indigo-700">{a.subject} <span className="text-xs text-slate-400 font-normal">({a.frequency}/wk)</span></div>
                                             <div className="text-xs text-slate-500 mt-0.5">{teachers.find(t => t.id === a.teacherId)?.firstName}</div>

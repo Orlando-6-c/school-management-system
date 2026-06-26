@@ -19,6 +19,7 @@ import {
     UserCog,
     Briefcase,
     ScrollText,
+    X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -42,9 +43,10 @@ interface SchoolSidebarProps {
     userName: string;
     userRole: string;
     nav: NavVisibility;
+    onCloseMobile?: () => void;
 }
 
-export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSidebarProps) {
+export function SchoolSidebar({ schoolName, userName, userRole, nav, onCloseMobile }: SchoolSidebarProps) {
     const pathname = usePathname();
 
     const isActive = (path: string) =>
@@ -78,7 +80,7 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSid
 
     return (
         <aside
-            className="w-64 flex flex-col fixed h-full z-10 border-r"
+            className="w-64 flex flex-col h-full border-r"
             style={{
                 backgroundColor: 'var(--sidebar)',
                 borderColor: 'var(--sidebar-border)',
@@ -95,7 +97,7 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSid
                 >
                     <School size={16} />
                 </div>
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                     <span
                         className="text-sm font-bold leading-tight truncate"
                         style={{ color: 'var(--sidebar-foreground)' }}
@@ -107,6 +109,16 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSid
                         {userRole || 'Staff'}
                     </span>
                 </div>
+                {onCloseMobile && (
+                    <button
+                        onClick={onCloseMobile}
+                        className="md:hidden flex-shrink-0 p-1.5 rounded-md opacity-60 hover:opacity-100 transition-opacity"
+                        style={{ color: 'var(--sidebar-foreground)' }}
+                        aria-label="Close menu"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
             </div>
 
             {/* Nav */}
@@ -123,6 +135,7 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav }: SchoolSid
                         <Link
                             key={link.href}
                             href={link.href}
+                            onClick={onCloseMobile}
                             className={cn(
                                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                                 active

@@ -27,17 +27,17 @@ export default async function TeacherDashboardPage() {
             <p className="text-muted-foreground text-lg">You are currently assigned to {assignments.length} unique subject-classes.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                <Link href="/school/teacher/attendance" className="block p-6 bg-white border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow">
-                    <h2 className="text-xl font-bold text-indigo-600">Daily Attendance</h2>
+                <Link href="/school/teacher/attendance" className="block p-6 bg-card border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow">
+                    <h2 className="text-xl font-bold text-violet-600">Daily Attendance</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Mark your assigned students present or absent easily.</p>
                 </Link>
 
-                <Link href="/school/teacher/homework" className="block p-6 bg-white border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow">
+                <Link href="/school/teacher/homework" className="block p-6 bg-card border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow">
                     <h2 className="text-xl font-bold text-emerald-600">Homework & Tasks</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Author structured assignments, track due dates.</p>
                 </Link>
 
-                <Link href="/school/teacher/materials" className="block p-6 bg-white border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow">
+                <Link href="/school/teacher/materials" className="block p-6 bg-card border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow">
                     <h2 className="text-xl font-bold text-amber-600">E-Books & Materials</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Upload and share study attachments strictly via file links.</p>
                 </Link>

@@ -147,7 +147,7 @@ export function ClassActions({ classItem, teachers }: ClassActionsProps) {
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <DialogContent className="sm:max-w-[425px] bg-white">
+                <DialogContent className="sm:max-w-[425px] bg-card text-foreground">
                     <DialogHeader>
                         <DialogTitle className="text-red-600">Delete Class</DialogTitle>
                         <DialogDescription>

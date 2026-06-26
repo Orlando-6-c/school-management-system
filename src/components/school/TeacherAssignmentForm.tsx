@@ -21,7 +21,7 @@ export default function TeacherAssignmentForm({ teachers, classes, assignments }
 
     return (
         <div className="space-y-10">
-            <form action={formAction} className="bg-white p-6 rounded-xl border border-border shadow-sm space-y-4">
+            <form action={formAction} className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-4">
                 <h2 className="text-xl font-bold">Assign Teacher</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -71,7 +71,7 @@ export default function TeacherAssignmentForm({ teachers, classes, assignments }
 
             <div>
                 <h2 className="text-xl font-bold mb-4">Current Assignments</h2>
-                <div className="bg-white rounded-xl border border-border overflow-hidden">
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-muted px-4 py-3 border-b border-border font-medium">
                             <tr>

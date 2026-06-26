@@ -64,7 +64,7 @@ export default function AttendanceTaker({ assignments, classStudents, existingAt
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-6 p-6 bg-white border border-border rounded-xl shadow-sm">
+            <div className="flex flex-col md:flex-row gap-6 p-6 bg-card border border-border rounded-xl shadow-sm">
                 <div className="space-y-2 flex-1">
                     <Label>Target Class</Label>
                     <Select value={selectedClassId} onValueChange={(val) => handleLoadRecords(val, date)}>
@@ -83,7 +83,7 @@ export default function AttendanceTaker({ assignments, classStudents, existingAt
             </div>
 
             {selectedClassId && (
-                <div className="bg-white border text-foreground border-border rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-card border text-foreground border-border rounded-xl shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between p-4 bg-muted border-b border-border">
                         <label className="flex items-center space-x-2 font-bold select-none cursor-pointer text-indigo-700">
                             <Checkbox
