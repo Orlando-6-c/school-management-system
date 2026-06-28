@@ -98,7 +98,11 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
     if (!schoolSlug) {
         const users = await db.user.findMany({
             where: { username },
-            include: { school: true },
+            select: {
+                id: true, username: true, password: true, role: true, schoolId: true,
+                isActive: true, loginAttempts: true, lockedUntil: true,
+                school: { select: { slug: true } },
+            },
         });
 
         if (users.length === 0) return { message: 'Invalid credentials' };
@@ -140,7 +144,7 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
     }
 
     // ── School User — slug provided ────────────────────────────────────────────
-    const school = await db.school.findUnique({ where: { slug: schoolSlug } });
+    const school = await db.school.findUnique({ where: { slug: schoolSlug }, select: { id: true, slug: true } });
     if (!school) return { message: 'School not found' };
 
     const user = await db.user.findUnique({

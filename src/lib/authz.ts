@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { getSession } from './session';
 import db from './db';
 import {
@@ -34,8 +35,11 @@ export interface CurrentUser {
 /**
  * Load the session user along with their resolved (role + override) permissions.
  * Returns null when not logged in. SuperAdmins resolve to full access.
+ *
+ * Wrapped in React cache() so multiple calls within the same request (layout +
+ * page + server actions) share one DB round-trip instead of N.
  */
-export async function getCurrentUserWithPermissions(): Promise<CurrentUser | null> {
+export const getCurrentUserWithPermissions = cache(async (): Promise<CurrentUser | null> => {
     const session = await getSession();
     if (!session.userId) return null;
 
@@ -55,7 +59,16 @@ export async function getCurrentUserWithPermissions(): Promise<CurrentUser | nul
 
     const user = await db.user.findUnique({
         where: { id: session.userId },
-        include: { role_: true },
+        select: {
+            id: true,
+            username: true,
+            role: true,
+            schoolId: true,
+            permissionOverride: true,
+            role_: {
+                select: { id: true, name: true, permissions: true, isOwner: true, isSystem: true },
+            },
+        },
     });
 
     if (!user) return null;
@@ -75,7 +88,7 @@ export async function getCurrentUserWithPermissions(): Promise<CurrentUser | nul
         isSuperAdmin: false,
         permissions,
     };
-}
+});
 
 /**
  * Gate a server action on a specific module/action permission. Throws

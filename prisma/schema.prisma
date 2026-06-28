@@ -177,6 +177,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
 
   @@unique([username, schoolId])
+  @@index([username])
   @@index([schoolId])
   @@index([roleId])
 }
@@ -315,6 +316,8 @@ model Student {
 
   @@unique([rollNumber, schoolId])
   @@index([schoolId])
+  @@index([schoolId, isActive])
+  @@index([schoolId, classId])
   @@index([classId])
   @@index([guardianId])
   @@index([name])
@@ -388,6 +391,9 @@ model Teacher {
 
   @@unique([email, schoolId])
   @@index([schoolId])
+  @@index([schoolId, isActive])
+  @@index([schoolId, firstName, lastName])
+  @@index([cnic])
   @@index([salaryStructureId])
 }
 
@@ -436,6 +442,8 @@ model Staff {
 
   @@unique([cnic, schoolId])
   @@index([schoolId])
+  @@index([schoolId, isActive])
+  @@index([schoolId, name])
   @@index([salaryStructureId])
 }
 

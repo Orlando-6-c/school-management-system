@@ -782,17 +782,23 @@ export async function generateBulkChallans(
         return { success: false, message: 'Access Denied: Insufficient Permissions' };
     }
 
+    const settled = await Promise.allSettled(
+        studentIds.map((studentId) => generateChallan(studentId, month, year, dueDate))
+    );
+
     const results: { studentId: string; success: boolean; message: string; challan?: any }[] = [];
     const generatedChallans: any[] = [];
 
-    for (const studentId of studentIds) {
-        // Call the single challan generation function for each student
-        const result = await generateChallan(studentId, month, year, dueDate);
-        results.push({ studentId, success: result.success, message: result.message || '' });
-        if (result.success && result.challan) {
-            generatedChallans.push(result.challan);
+    settled.forEach((outcome, i) => {
+        const studentId = studentIds[i];
+        if (outcome.status === 'fulfilled') {
+            const result = outcome.value;
+            results.push({ studentId, success: result.success, message: result.message || '' });
+            if (result.success && result.challan) generatedChallans.push(result.challan);
+        } else {
+            results.push({ studentId, success: false, message: outcome.reason?.message ?? 'Error' });
         }
-    }
+    });
 
     revalidatePath('/school/finance/challans');
     return { success: true, message: 'Bulk challan generation process completed.', results, generatedChallans };
@@ -1316,12 +1322,15 @@ export async function generateBulkSalarySlips(
         return { success: false, message: 'Unauthorized' };
     }
 
-    const results: { employeeId: string; success: boolean; message: string }[] = [];
+    const settled = await Promise.allSettled(
+        employees.map((e) => generateSalarySlip(e.employeeId, e.employeeType, month, year, paidAt))
+    );
 
-    for (const employee of employees) {
-        const result = await generateSalarySlip(employee.employeeId, employee.employeeType, month, year, paidAt);
-        results.push({ employeeId: employee.employeeId, success: result.success, message: result.message || '' });
-    }
+    const results: { employeeId: string; success: boolean; message: string }[] = settled.map((outcome, i) => ({
+        employeeId: employees[i].employeeId,
+        success: outcome.status === 'fulfilled' ? outcome.value.success : false,
+        message: outcome.status === 'fulfilled' ? (outcome.value.message || '') : (outcome.reason?.message ?? 'Error'),
+    }));
 
     revalidatePath('/school/finance/salary-slips');
     return { success: true, message: 'Bulk salary slip generation process completed.', results };
@@ -1398,8 +1407,10 @@ export async function generateMonthlySalarySlips(month: string, year: number) {
             });
         };
 
-        for (const t of teachers) await processEmployee(t, 'Teacher', t.id, 'teacher');
-        for (const s of staff) await processEmployee(s, 'Staff', s.id, 'staff');
+        await Promise.all([
+            ...teachers.map((t) => processEmployee(t, 'Teacher', t.id, 'teacher')),
+            ...staff.map((s) => processEmployee(s, 'Staff', s.id, 'staff')),
+        ]);
 
         if (!slips.length) {
             return { success: false, message: skipped > 0 ? `All slips already exist for ${month} ${year}.` : 'No employees with a salary set.' };

@@ -31,30 +31,25 @@ export default async function AcademicsPage() {
         );
     }
 
-    // Fetch Classes with student counts and teacher assignments
-    // Added safe fetching: returns empty array if DB call fails (though db.class.findMany usually doesn't throw on empty)
-    const classes = await db.class.findMany({
-        where: { schoolId: session.schoolId, isActive: true },
-        include: {
-            _count: {
-                select: { students: true }
+    const [classes, rawTeachers] = await Promise.all([
+        db.class.findMany({
+            where: { schoolId: session.schoolId, isActive: true },
+            include: {
+                _count: { select: { students: true } },
+                teacherAssignments: {
+                    include: {
+                        teacher: { select: { id: true, firstName: true, lastName: true } },
+                    },
+                },
             },
-            teacherAssignments: {
-                include: {
-                    teacher: true
-                }
-            }
-        },
-        orderBy: { gradeLevel: 'asc' }
-    });
-
-    // Fetch Teachers for the Create Dialog
-    // Updated to select firstName/lastName instead of 'name' which doesn't exist
-    const rawTeachers = await db.teacher.findMany({
-        where: { schoolId: session.schoolId },
-        select: { id: true, firstName: true, lastName: true },
-        orderBy: { firstName: 'asc' }
-    });
+            orderBy: { gradeLevel: 'asc' },
+        }),
+        db.teacher.findMany({
+            where: { schoolId: session.schoolId, isActive: true },
+            select: { id: true, firstName: true, lastName: true },
+            orderBy: { firstName: 'asc' },
+        }),
+    ]);
 
     // Transform for the dialog interface
     const teachers = rawTeachers.map(t => ({
