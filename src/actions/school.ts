@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { hashPassword } from '@/lib/auth';
 import { seedRolesForSchool } from '@/lib/seed-roles';
+import { createTrialSubscription } from '@/actions/subscription';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -210,6 +211,9 @@ export async function registerSchool(
                 },
             });
             newAdmin = { id: admin.id, username: admin.username, role: admin.role, schoolId: admin.schoolId };
+
+            // Start 14-day free trial
+            await createTrialSubscription(tx, school.id);
         });
 
         if (!newAdmin || !newSchool) throw new Error('Registration failed');

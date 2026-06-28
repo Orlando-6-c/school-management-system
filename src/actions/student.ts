@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateRollNumber } from '@/lib/utils/roll-number';
 import { hashPassword } from '@/lib/auth';
+import { checkStudentLimit } from '@/actions/subscription';
 import { z } from 'zod';
 
 const studentSchema = z.object({
@@ -68,6 +69,11 @@ export async function admitStudent(prevState: AdmissionState | undefined, formDa
     const session = await getSession();
     if (!session.userId || !session.schoolId || !(await hasPermission('students', 'create'))) {
         return { message: 'Unauthorized' };
+    }
+
+    const limitCheck = await checkStudentLimit(session.schoolId);
+    if (!limitCheck.allowed) {
+        return { message: limitCheck.message };
     }
 
     const result = studentSchema.safeParse(Object.fromEntries(formData));

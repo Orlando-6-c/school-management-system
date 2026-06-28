@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { getCurrentUserWithPermissions, userCan } from '@/lib/authz';
 import { SchoolShell } from '@/components/school/SchoolShell';
+import { getTrialDaysLeft } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 
@@ -26,9 +27,18 @@ export default async function SchoolLayout({
 
     const school = await db.school.findUnique({
         where: { id: actor.schoolId },
-        select: { name: true, slug: true },
+        select: { name: true, slug: true, subscription: true },
     });
     if (!school) redirect('/login');
+
+    const sub = school.subscription;
+    const trialInfo = sub
+        ? {
+              plan: sub.plan,
+              status: sub.status,
+              daysLeft: sub.status === 'Trial' ? getTrialDaysLeft(sub.trialEndsAt) : 0,
+          }
+        : null;
 
     // Coarse guard here; fine-grained checks live in the server actions/pages.
     // Build the nav visibility map from resolved permissions.
@@ -56,6 +66,7 @@ export default async function SchoolLayout({
             userName={actor.username}
             userRole={actor.role}
             nav={nav}
+            trialInfo={trialInfo}
         >
             {children}
         </SchoolShell>

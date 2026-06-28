@@ -160,10 +160,20 @@ Follow `ROADMAP.md` for detail. Summary of what's left:
 - Self-serve school onboarding/signup (trial) for new clients. ← Phase 4 boundary
 - Polished landing + pricing pages. ← Phase 4 boundary
 
-### Phase 4 — monetization
-- Subscription plans + payment gateway (Stripe, or a local PK gateway given the target market).
-- Plan-based feature/limit gating (tie plan tiers to modules + max students/users).
-- Billing dashboard for SuperAdmin; usage limits.
+### Phase 4 — monetization ✅ COMPLETE
+- ✅ Landing page (`/`) — hero, features grid, pricing section, CTA, footer.
+- ✅ Self-serve school signup (`/register`) — form calls `registerSchool`, auto-creates 14-day trial subscription, auto-logs in.
+- ✅ Subscription model: `Subscription` DB model with `PlanTier` (Trial/Starter/School/District) + `SubscriptionStatus`.
+- ✅ Plan constants + limit helpers in `src/lib/plans.ts` (maxStudents, maxUsers, pricing per plan).
+- ✅ 14-day trial auto-created on `registerSchool`; SuperAdmin-created schools get trial via same helper.
+- ✅ Usage limit enforcement: `admitStudent` + `createSchoolUser` check plan caps before proceeding.
+- ✅ `TrialBanner` — dismissible banner in school layout counting down trial days; red when expired.
+- ✅ `/school/settings/billing` — shows plan, status, usage bars, included features, upgrade CTA.
+- ✅ Settings page quick-links added (Account, Billing, Audit Log).
+- ✅ `/admin/billing` — SuperAdmin table of all schools with plan/status/usage; `UpdatePlanDialog` to manually set plan + status + notes + period.
+- ✅ Admin sidebar: Billing link added.
+- ✅ All subscription actions in `src/actions/subscription.ts`: `getSchoolSubscription`, `getAllSubscriptions`, `updateSchoolPlan`, `checkStudentLimit`, `checkUserLimit`.
+- Payment gateway (Stripe / local PK) intentionally deferred — billing is manual (bank transfer + SuperAdmin upgrade) for initial market. ← Phase 5 boundary
 
 ### Phase 5 — scale & polish
 - Calendar/Events UI (schema exists), parent/student portals, CSV bulk import, SMS/notifications.

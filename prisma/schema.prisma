@@ -58,6 +58,24 @@ enum ExpenseCategory {
 }
 
 // ============================================================================
+// SUBSCRIPTION / BILLING
+// ============================================================================
+
+enum PlanTier {
+  Trial
+  Starter
+  School
+  District
+}
+
+enum SubscriptionStatus {
+  Trial
+  Active
+  Expired
+  Cancelled
+}
+
+// ============================================================================
 // AUTHENTICATION & USER MANAGEMENT (SRS 3.1)
 // ============================================================================
 
@@ -94,6 +112,9 @@ model School {
   // Created by SuperAdmin (null for self-registered schools)
   superAdminId String?
   superAdmin   SuperAdmin? @relation(fields: [superAdminId], references: [id], onDelete: SetNull)
+
+  // Billing
+  subscription Subscription?
 
   // School has many...
   users                  User[]
@@ -879,4 +900,26 @@ model BankAccount {
   updatedAt     DateTime @updatedAt
 
   @@index([schoolId])
+}
+
+// ============================================================================
+// SUBSCRIPTIONS
+// ============================================================================
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  schoolId           String             @unique
+  school             School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  plan               PlanTier           @default(Trial)
+  status             SubscriptionStatus @default(Trial)
+  trialEndsAt        DateTime
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([status])
+  @@index([trialEndsAt])
 }

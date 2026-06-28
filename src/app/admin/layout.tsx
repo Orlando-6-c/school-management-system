@@ -2,7 +2,7 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { logout } from '@/actions/auth';
-import { LayoutDashboard, School, LogOut, Settings, ScrollText, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, School, LogOut, Settings, ScrollText, ShieldAlert, CreditCard } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export const runtime = 'nodejs';
@@ -21,6 +21,7 @@ export default async function AdminLayout({
     const links = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/admin/schools', label: 'Schools', icon: School },
+        { href: '/admin/billing', label: 'Billing', icon: CreditCard },
         { href: '/admin/audit-log', label: 'Audit Log', icon: ScrollText },
         { href: '/admin/settings', label: 'Settings', icon: Settings },
     ];

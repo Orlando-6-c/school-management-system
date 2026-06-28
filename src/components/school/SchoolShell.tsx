@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { SchoolSidebar, NavVisibility } from './SchoolSidebar';
+import { TrialBanner } from './TrialBanner';
 import { Menu, School } from 'lucide-react';
 
 interface SchoolShellProps {
@@ -11,9 +12,10 @@ interface SchoolShellProps {
     userRole: string;
     nav: NavVisibility;
     children: React.ReactNode;
+    trialInfo?: { plan: string; status: string; daysLeft: number } | null;
 }
 
-export function SchoolShell({ schoolName, schoolSlug, userName, userRole, nav, children }: SchoolShellProps) {
+export function SchoolShell({ schoolName, schoolSlug, userName, userRole, nav, children, trialInfo }: SchoolShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
@@ -76,6 +78,13 @@ export function SchoolShell({ schoolName, schoolSlug, userName, userRole, nav, c
 
             {/* Main content — full width with no offset on print */}
             <main className="md:ml-64 pt-14 md:pt-0 min-h-screen print:ml-0 print:pt-0">
+                {trialInfo && (trialInfo.status === 'Trial' || trialInfo.status === 'Expired') && (
+                    <TrialBanner
+                        plan={trialInfo.plan}
+                        status={trialInfo.status}
+                        daysLeft={trialInfo.daysLeft}
+                    />
+                )}
                 <div className="p-6 md:p-8 print:p-0">{children}</div>
             </main>
         </div>

@@ -10,6 +10,7 @@ import {
 } from '@/lib/authz';
 import { normalizePermissionMap } from '@/lib/permissions';
 import { sendWelcomeEmail } from '@/lib/email';
+import { checkUserLimit } from '@/actions/subscription';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
@@ -40,6 +41,9 @@ export async function createSchoolUser(formData: FormData): Promise<ActionResult
     try {
         const actor = await requirePermission('users', 'create');
         if (!actor.schoolId) return { success: false, message: 'No school context.' };
+
+        const limitCheck = await checkUserLimit(actor.schoolId);
+        if (!limitCheck.allowed) return { success: false, message: limitCheck.message };
 
         const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
         if (!parsed.success) {
