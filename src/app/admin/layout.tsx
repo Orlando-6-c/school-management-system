@@ -71,14 +71,8 @@ export default async function AdminLayout({
                         <Link
                             key={href}
                             href={href}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium opacity-75 hover:opacity-100 transition-colors"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium opacity-75 hover:opacity-100 hover:bg-[var(--sidebar-accent)] transition-colors"
                             style={{ color: 'var(--sidebar-foreground)' }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--sidebar-accent)';
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.backgroundColor = '';
-                            }}
                         >
                             <Icon size={16} className="shrink-0" />
                             <span>{label}</span>
@@ -99,16 +93,8 @@ export default async function AdminLayout({
                     </div>
                     <form action={logout}>
                         <button
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors"
-                            style={{ color: 'oklch(0.65 0.2 25)', opacity: 0.8 }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.opacity = '1';
-                                (e.currentTarget as HTMLElement).style.backgroundColor = 'oklch(0.3 0.1 25 / 0.2)';
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.opacity = '0.8';
-                                (e.currentTarget as HTMLElement).style.backgroundColor = '';
-                            }}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors opacity-80 hover:opacity-100 hover:bg-[oklch(0.3_0.1_25_/_0.2)]"
+                            style={{ color: 'oklch(0.65 0.2 25)' }}
                         >
                             <LogOut size={16} className="shrink-0" />
                             <span>Sign out</span>
