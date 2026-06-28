@@ -7,8 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+function downloadCSV(filename: string, headers: string[], dataRows: (string | number)[][]) {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [headers, ...dataRows].map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+}
 
 type MonthRow = { month: string; income: number; expense: number; net: number };
 
@@ -50,9 +60,18 @@ export function IncomeExpenseReport() {
                 </div>
                 <Button onClick={load} disabled={isPending}>{isPending ? 'Loading…' : 'Generate'}</Button>
                 {months && (
-                    <Button variant="outline" onClick={() => window.print()} className="ml-auto">
-                        <Printer className="h-4 w-4 mr-2" /> Print
-                    </Button>
+                    <div className="ml-auto flex gap-2">
+                        <Button variant="outline" onClick={() => downloadCSV(
+                            `income-expense-${year}.csv`,
+                            ['Month', 'Income (Rs)', 'Expense (Rs)', 'Net (Rs)'],
+                            months.map((m) => [m.month, m.income, m.expense, m.net])
+                        )}>
+                            <Download className="h-4 w-4 mr-2" /> CSV
+                        </Button>
+                        <Button variant="outline" onClick={() => window.print()}>
+                            <Printer className="h-4 w-4 mr-2" /> Print
+                        </Button>
+                    </div>
                 )}
             </div>
 

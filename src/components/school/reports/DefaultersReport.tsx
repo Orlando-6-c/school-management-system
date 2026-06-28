@@ -8,7 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
+
+function downloadCSV(filename: string, headers: string[], dataRows: (string | number)[][]) {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [headers, ...dataRows].map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+}
 
 interface ClassOption { id: string; name: string; section: string | null }
 interface DefaultersReportProps { classes: ClassOption[] }
@@ -18,7 +28,7 @@ type Row = { challanId: string; challanNumber: string; studentId: string; studen
 function fmt(n: number) { return n.toLocaleString('en-PK', { minimumFractionDigits: 0 }); }
 
 export function DefaultersReport({ classes }: DefaultersReportProps) {
-    const [classId, setClassId] = useState('');
+    const [classId, setClassId] = useState('all');
     const [rows, setRows] = useState<Row[] | null>(null);
     const [totalBalance, setTotalBalance] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +37,7 @@ export function DefaultersReport({ classes }: DefaultersReportProps) {
     function load() {
         setError(null);
         startTransition(async () => {
-            const res = await getDefaultersReport(classId || undefined);
+            const res = await getDefaultersReport(classId === 'all' ? undefined : classId);
             if (!res.success) { setError(res.message); return; }
             setRows(res.rows);
             setTotalBalance(res.totalBalance);
@@ -42,7 +52,7 @@ export function DefaultersReport({ classes }: DefaultersReportProps) {
                     <Select value={classId} onValueChange={setClassId}>
                         <SelectTrigger className="w-48"><SelectValue placeholder="All Classes" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All Classes</SelectItem>
+                            <SelectItem value="all">All Classes</SelectItem>
                             {classes.map((c) => (
                                 <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` (${c.section})` : ''}</SelectItem>
                             ))}
@@ -51,9 +61,18 @@ export function DefaultersReport({ classes }: DefaultersReportProps) {
                 </div>
                 <Button onClick={load} disabled={isPending}>{isPending ? 'Loading…' : 'Generate'}</Button>
                 {rows && (
-                    <Button variant="outline" onClick={() => window.print()} className="ml-auto">
-                        <Printer className="h-4 w-4 mr-2" /> Print
-                    </Button>
+                    <div className="ml-auto flex gap-2">
+                        <Button variant="outline" onClick={() => downloadCSV(
+                            'defaulters-report.csv',
+                            ['Roll #', 'Student', 'Class', 'Challan #', 'Total (Rs)', 'Paid (Rs)', 'Balance (Rs)', 'Status', 'Due Date', 'Days Overdue'],
+                            rows.map((r) => [r.rollNumber, r.studentName, r.className, r.challanNumber, r.amount, r.paidAmount, r.balance, r.status, r.dueDate, r.daysOverdue])
+                        )}>
+                            <Download className="h-4 w-4 mr-2" /> CSV
+                        </Button>
+                        <Button variant="outline" onClick={() => window.print()}>
+                            <Printer className="h-4 w-4 mr-2" /> Print
+                        </Button>
+                    </div>
                 )}
             </div>
 

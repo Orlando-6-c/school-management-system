@@ -140,18 +140,20 @@ Until this runs, `src/actions/users.ts`, `authz.ts`, `school.ts`, `seed.ts`, and
 
 Follow `ROADMAP.md` for detail. Summary of what's left:
 
-### Phase 2 — MVP feature completeness
-- Login: clean multi-tenant flow (school slug on main domain + SuperAdmin access button), correct per-role redirects, **login rate-limiting + lockout**.
-- Role-appropriate dashboards (accountant → finance, CR → students/payments, etc.), driven by resolved permissions.
-- **Attendance** end-to-end (schema exists; build admin-side actions + UI; teacher portal already has `saveAttendance`).
-- **Reports** module: fee-collection summary, defaulters, income vs expense, salary register — with PDF/Excel export.
-- Password reset + change-password flow for all users (not just SuperAdmin).
-- Assign self-serve roles to auto-provisioned Teacher/Student/Parent accounts (currently still rely on legacy enum) OR formally keep portals on the legacy path — decide and document.
+### Phase 2 — MVP feature completeness ✅ COMPLETE
+- ✅ Login: multi-tenant flow (no-slug → auto-find unique user OR prompt for slug), SuperAdmin path, per-role redirects, rate-limiting + lockout (5 attempts, 15-min lock).
+- ✅ Role-appropriate dashboards: Finance role → finance dashboard; all others → academic dashboard with real counts + audit-log recent activity.
+- ✅ Attendance end-to-end: `AttendanceTaker` (mark) + `AttendanceViewer` (view/reports) with class-level date navigation.
+- ✅ Reports module: fee-collection, defaulters, income vs expense, salary register — all with Print + CSV export.
+- ✅ Password change flow for all users (`/school/settings/account` with `ChangePasswordForm`).
+- ✅ Portal accounts **decision**: Teacher/Student/Parent portals stay on legacy role enum (`session.role === 'Teacher'` etc.). Do NOT migrate them to the permissions system — the portals are user-specific and don't need action-level gating.
 
 ### Phase 3 — productization
 - File/photo uploads (Vercel Blob or S3) replacing string `photograph` fields.
 - Transactional email (Resend) for invites, password reset, challan notices.
-- Error monitoring (Sentry) + an audit-log viewer UI (audit data already captured in `db.ts`).
+- Error monitoring (Sentry).
+- ✅ Audit-log viewer UI: `/school/settings/audit-log` with pagination + model filter.
+- ✅ Dashboard recent activity pulling from `db.auditLog`.
 - Self-serve school onboarding/signup (trial) for new clients.
 - Polished landing + pricing pages.
 

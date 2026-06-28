@@ -8,9 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function downloadCSV(filename: string, headers: string[], dataRows: (string | number)[][]) {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [headers, ...dataRows].map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+}
 
 type Row = { id: string; challanNumber: string; studentName: string; rollNumber: string; className: string; amount: number; paidAmount: number; status: string; dueDate: string };
 type Summary = { total: number; paid: number; pending: number; overdue: number; partiallyPaid: number; totalAmount: number; collectedAmount: number };
@@ -68,9 +78,18 @@ export function FeeCollectionReport() {
                 </div>
                 <Button onClick={load} disabled={isPending}>{isPending ? 'Loading…' : 'Generate'}</Button>
                 {rows && (
-                    <Button variant="outline" onClick={() => window.print()} className="ml-auto">
-                        <Printer className="h-4 w-4 mr-2" /> Print
-                    </Button>
+                    <div className="ml-auto flex gap-2">
+                        <Button variant="outline" onClick={() => downloadCSV(
+                            `fee-collection-${MONTHS[month - 1]}-${year}.csv`,
+                            ['Challan #', 'Student', 'Roll Number', 'Class', 'Amount (Rs)', 'Paid (Rs)', 'Status', 'Due Date'],
+                            rows.map((r) => [r.challanNumber, r.studentName, r.rollNumber, r.className, r.amount, r.paidAmount, r.status, r.dueDate])
+                        )}>
+                            <Download className="h-4 w-4 mr-2" /> CSV
+                        </Button>
+                        <Button variant="outline" onClick={() => window.print()}>
+                            <Printer className="h-4 w-4 mr-2" /> Print
+                        </Button>
+                    </div>
                 )}
             </div>
 

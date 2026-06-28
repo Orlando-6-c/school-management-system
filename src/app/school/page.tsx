@@ -158,11 +158,12 @@ export default async function SchoolDashboard() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [studentCount, teacherCount, classCount, presentToday] = await Promise.all([
+    const [studentCount, teacherCount, classCount, presentToday, recentActivity] = await Promise.all([
         db.student.count({ where: { schoolId: session.schoolId!, isActive: true } }),
         db.teacher.count({ where: { schoolId: session.schoolId!, isActive: true } }),
         db.class.count({ where: { schoolId: session.schoolId!, isActive: true } }),
         db.attendance.count({ where: { schoolId: session.schoolId!, date: { gte: today }, isPresent: true } }),
+        db.auditLog.findMany({ where: { schoolId: session.schoolId! }, orderBy: { createdAt: 'desc' }, take: 8 }),
     ]);
 
     const stats = [
@@ -241,13 +242,30 @@ export default async function SchoolDashboard() {
 
             <div className="grid gap-6 md:grid-cols-2">
                 <Card className="border-border shadow-sm">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-lg text-foreground">Recent Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-sm text-muted-foreground py-8 text-center italic">
-                            No recent activity to show.
-                        </div>
+                        {recentActivity.length === 0 ? (
+                            <div className="text-sm text-muted-foreground py-8 text-center italic">No recent activity to show.</div>
+                        ) : (
+                            <div className="space-y-2">
+                                {recentActivity.map((log) => {
+                                    const [op, ...modelParts] = log.action.split('_');
+                                    const opLabel: Record<string, string> = { create: 'Created', createMany: 'Created', update: 'Updated', updateMany: 'Updated', delete: 'Deleted', deleteMany: 'Deleted', upsert: 'Saved' };
+                                    const modelLabel = modelParts.join(' ').replace(/([A-Z])/g, ' $1').trim();
+                                    return (
+                                        <div key={log.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border">
+                                            <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${op === 'create' || op === 'createMany' ? 'bg-green-500' : op === 'delete' || op === 'deleteMany' ? 'bg-red-500' : 'bg-blue-500'}`} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-foreground">{opLabel[op] ?? op} {modelLabel}</p>
+                                                <p className="text-xs text-muted-foreground">{format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm')}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
