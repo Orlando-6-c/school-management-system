@@ -7,7 +7,7 @@ import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { StudentTable } from '@/components/school/StudentTable';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PaginationControls } from '@/components/ui/pagination-controls';
@@ -68,6 +68,12 @@ export default async function StudentsPage({
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">Student Directory</h1>
                 <div className="flex gap-2">
                     <PrintDirectoryButton classes={serializeData(classes)} />
+                    <Button asChild variant="outline">
+                        <Link href="/school/students/import">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Import CSV
+                        </Link>
+                    </Button>
                     <Button asChild>
                         <Link href="/school/students/new">
                             <Plus className="mr-2 h-4 w-4" />

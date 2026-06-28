@@ -41,6 +41,7 @@ export default async function SettingsPage() {
                 {[
                     { href: '/school/settings/account', icon: User, label: 'Account & Password', desc: 'Change your login password' },
                     { href: '/school/settings/billing', icon: CreditCard, label: 'Billing & Plan', desc: 'View plan, usage, and limits' },
+                    { href: '/school/settings/export', icon: ScrollText, label: 'Data Export', desc: 'Download school data as CSV' },
                     { href: '/school/settings/audit-log', icon: ScrollText, label: 'Audit Log', desc: 'Track all system activity' },
                 ].map(({ href, icon: Icon, label, desc }) => (
                     <Link

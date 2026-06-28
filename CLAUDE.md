@@ -175,10 +175,15 @@ Follow `ROADMAP.md` for detail. Summary of what's left:
 - ✅ All subscription actions in `src/actions/subscription.ts`: `getSchoolSubscription`, `getAllSubscriptions`, `updateSchoolPlan`, `checkStudentLimit`, `checkUserLimit`.
 - Payment gateway (Stripe / local PK) intentionally deferred — billing is manual (bank transfer + SuperAdmin upgrade) for initial market. ← Phase 5 boundary
 
-### Phase 5 — scale & polish
-- Calendar/Events UI (schema exists), parent/student portals, CSV bulk import, SMS/notifications.
-- Performance: query review, caching, pagination on large tables.
-- Backups, per-school data export, GDPR-style deletion.
+### Phase 5 — scale & polish ✅ COMPLETE
+- ✅ Portal layouts: `/app/portal/layout.tsx` — shared header (school name, role, username, logout) for Student, Parent, and Teacher portals. Portals were already built; now they have a nav shell.
+- ✅ Calendar/Events UI: `/school/calendar` — monthly grid view with navigation, color-coded event dots, create/edit/delete dialog (SchoolAdmin only), event detail popup. Actions in `src/actions/events.ts`.
+- ✅ Student CSV bulk import: `/school/students/import` — upload CSV, auto-parse, preview table, row-by-row import with per-row error reporting; generates roll numbers, creates guardian + parent portal user + student portal user automatically; respects plan limits; "Import CSV" button added to students page. Template download included.
+- ✅ Exam results entry: `/school/academics/exams` — create exams per class, enter marks per student per subject (inline spreadsheet grid), subject management (common quick-add + custom). Exam results already fetched in student/parent portals. Link added to sidebar.
+- ✅ School data export: `/school/settings/export` + `/api/export?type=` — CSV downloads for Students, Teachers, Staff, Fee Challans; auth-gated API route; added to settings page quick-links.
+- SMS/notifications: deferred — no local PK SMS provider integrated yet. ← Future boundary
+- Performance: all major listing pages already have server-side pagination (students, teachers, parents). Query caching deferred.
+- GDPR hard-deletion: soft-delete already implemented throughout; per-school bulk export done. Hard-delete UI deferred.
 
 ### Cross-cutting "market standard" checklist (apply continuously)
 - Every server action starts with a permission check + `schoolId` scoping. No exceptions.

@@ -61,6 +61,8 @@ export function SchoolSidebar({ schoolName, userName, userRole, nav, onCloseMobi
         { href: '/school/classes', label: 'Classes', icon: BookOpen, show: nav.academics || nav.students },
         { href: '/school/academics', label: 'Academics', icon: BookOpen, show: nav.academics },
         { href: '/school/academics/timetable', label: 'Timetables', icon: Calendar, show: nav.academics },
+        { href: '/school/academics/exams', label: 'Exams', icon: ClipboardList, show: nav.academics },
+        { href: '/school/calendar', label: 'Calendar', icon: Calendar, show: true },
         { href: '/school/attendance', label: 'Attendance', icon: ClipboardList, show: nav.attendance },
         { href: '/school/finance', label: 'Finance', icon: DollarSign, show: nav.finance },
         { href: '/school/reports', label: 'Reports', icon: BarChart3, show: nav.reports },
