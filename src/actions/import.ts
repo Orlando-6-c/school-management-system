@@ -83,39 +83,50 @@ export async function importStudents(rows: StudentImportRow[]): Promise<ImportRe
             const limitCheck = await checkStudentLimit(session.schoolId);
             if (!limitCheck.allowed) {
                 result.failed.push({ row: row.row, name: d.name, reason: limitCheck.message ?? 'Plan limit reached' });
-                // Stop further processing — limit hit
                 const remaining = rows.slice(rows.indexOf(row) + 1);
                 remaining.forEach((r) => result.failed.push({ row: r.row, name: r.name, reason: 'Plan limit reached' }));
                 break;
             }
 
+            // Hash passwords BEFORE the transaction — bcrypt is CPU-intensive and
+            // will exceed Prisma's 5 s interactive-transaction timeout if run inside it.
+            const hashedGuardianPass = await hashPassword(d.guardianContact);
+            const hashedStudentPass = await hashPassword(d.bFormNumber);
+
+            // Check whether the guardian already exists so we know whether we need
+            // the guardian hash (avoids wasted work on subsequent siblings).
+            const existingGuardian = await db.guardian.findUnique({
+                where: { cnic_schoolId: { cnic: d.guardianCnic, schoolId: session.schoolId! } },
+                select: { id: true },
+            });
+
             await db.$transaction(async (tx) => {
-                // Guardian: find or create
-                let guardian = await tx.guardian.findUnique({
-                    where: { cnic_schoolId: { cnic: d.guardianCnic, schoolId: session.schoolId! } },
-                });
+                let guardian = existingGuardian
+                    ? await tx.guardian.findUnique({ where: { id: existingGuardian.id }, select: { id: true } })
+                    : null;
+
                 if (!guardian) {
                     guardian = await tx.guardian.create({
                         data: {
                             name: d.guardianName,
                             relation: d.guardianRelation,
                             cnic: d.guardianCnic,
-                            dateOfBirth: new Date('1980-01-01'), // placeholder
+                            dateOfBirth: new Date('1980-01-01'),
                             contact: d.guardianContact,
                             schoolId: session.schoolId!,
                         },
+                        select: { id: true },
                     });
 
-                    // Create parent portal user
-                    const hashedPass = await hashPassword(d.guardianContact);
                     const parentUser = await tx.user.create({
                         data: {
                             username: d.guardianCnic,
-                            password: hashedPass,
+                            password: hashedGuardianPass,
                             role: 'Parent',
                             schoolId: session.schoolId!,
                             isActive: true,
                         },
+                        select: { id: true },
                     });
                     await tx.guardian.update({
                         where: { id: guardian.id },
@@ -123,14 +134,8 @@ export async function importStudents(rows: StudentImportRow[]): Promise<ImportRe
                     });
                 }
 
-                // Roll number
                 const existingCount = await tx.student.count({ where: { classId: cls.id, schoolId: session.schoolId! } });
-                const rollNumber = generateRollNumber(
-                    String(cls.hexCode),
-                    new Date(d.dateOfAdmission),
-                    existingCount,
-                );
-
+                const rollNumber = generateRollNumber(String(cls.hexCode), new Date(d.dateOfAdmission), existingCount);
                 const finalFee = d.monthlyFees;
 
                 const student = await tx.student.create({
@@ -145,23 +150,23 @@ export async function importStudents(rows: StudentImportRow[]): Promise<ImportRe
                         discountPercentage: 0,
                         finalFee,
                         classId: cls.id,
-                        guardianId: guardian.id,
+                        guardianId: guardian!.id,
                         schoolId: session.schoolId!,
                         isActive: true,
                     },
+                    select: { id: true, rollNumber: true },
                 });
 
-                // Student portal user
-                const hashedPass = await hashPassword(d.bFormNumber);
                 const studentUser = await tx.user.create({
                     data: {
                         username: student.rollNumber,
-                        password: hashedPass,
+                        password: hashedStudentPass,
                         role: 'Student',
                         schoolId: session.schoolId!,
                         studentId: student.id,
                         isActive: true,
                     },
+                    select: { id: true },
                 });
                 await tx.student.update({ where: { id: student.id }, data: { user: { connect: { id: studentUser.id } } } });
             });
@@ -227,6 +232,10 @@ export async function importTeachers(rows: TeacherImportRow[]): Promise<ImportRe
 
             const d = parsed.data;
 
+            // Hash outside the transaction — bcrypt blocks the event loop long
+            // enough to exceed Prisma's 5 s interactive-transaction timeout.
+            const hashedPass = await hashPassword(d.phone);
+
             await db.$transaction(async (tx) => {
                 const teacher = await tx.teacher.create({
                     data: {
@@ -245,10 +254,9 @@ export async function importTeachers(rows: TeacherImportRow[]): Promise<ImportRe
                         address: d.address || null,
                         salaryExtras: [],
                     },
+                    select: { id: true },
                 });
 
-                // Teacher portal user — username = CNIC, password = phone
-                const hashedPass = await hashPassword(d.phone);
                 const teacherUser = await tx.user.create({
                     data: {
                         username: d.cnic,
@@ -258,6 +266,7 @@ export async function importTeachers(rows: TeacherImportRow[]): Promise<ImportRe
                         teacherId: teacher.id,
                         isActive: true,
                     },
+                    select: { id: true },
                 });
                 await tx.teacher.update({ where: { id: teacher.id }, data: { user: { connect: { id: teacherUser.id } } } });
             });
