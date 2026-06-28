@@ -1,20 +1,17 @@
-// src/app/school/finance/income/page.tsx
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getIncomeRecords } from '@/actions/finance';
-import IncomeTable from '@/components/finance/IncomeTable'; // To be created
+import IncomeTable from '@/components/finance/IncomeTable';
 
-export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export default async function IncomePage() {
     const session = await getSession();
-
     if (!session?.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)) {
-        redirect('/login'); // Redirect unauthorized users
+        redirect('/login');
     }
 
     const incomeRecords = await getIncomeRecords();
@@ -22,26 +19,15 @@ export default async function IncomePage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Income Management</h1>
+                <div>
+                    <h1 className="text-2xl font-semibold text-foreground">Income</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">{incomeRecords.length} records total</p>
+                </div>
                 <Link href="/school/finance/income/new">
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Income
-                    </Button>
+                    <Button size="sm"><Plus className="h-4 w-4 mr-1.5" />Add Income</Button>
                 </Link>
             </div>
-
-            <Card className="bg-card border-border shadow-sm">
-                <CardHeader>
-                    <CardTitle className="text-foreground">All Income Records</CardTitle>
-                    <CardDescription>
-                        Total Income Records: {incomeRecords.length}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <IncomeTable incomeRecords={incomeRecords} />
-                </CardContent>
-            </Card>
+            <IncomeTable incomeRecords={incomeRecords} />
         </div>
     );
 }

@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
-import Image from 'next/image';
 import AutoPrint from './auto-print'; // Client component for window.print()
 
 export default async function PrintStudentPage({ params }: { params: { id: string } }) {

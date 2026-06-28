@@ -46,23 +46,58 @@ export default function TimetableBuilder({ classes, teachers, timetables }: { cl
 
     const runAutoFill = () => {
         const availableDaysCount = ACTIVE_DAYS_DEFAULT.length;
+        const lectureSlots = gridTemplate.filter(s => s.type === 'Lecture');
 
+        // ── 1. Basic frequency-per-day guard ─────────────────────────────────
         for (const alloc of allocations) {
             if (alloc.frequency > availableDaysCount) {
-                alert(`Error: Subject ${alloc.subject} has a frequency (${alloc.frequency}) greater than available days (${availableDaysCount}). A subject cannot be assigned more than once per day.`);
+                alert(`"${alloc.subject}" has a frequency of ${alloc.frequency}/week but there are only ${availableDaysCount} school days. A subject can appear at most once per day.`);
                 return;
             }
         }
 
-        const lectureSlots = gridTemplate.filter(s => s.type === 'Lecture');
+        // ── 2. Total slot capacity guard ──────────────────────────────────────
         const totalAvailableSlots = availableDaysCount * lectureSlots.length;
         const totalRequestedSlots = allocations.reduce((sum, a) => sum + a.frequency, 0);
-
         if (totalRequestedSlots > totalAvailableSlots) {
-            alert(`Error: Total requested lectures (${totalRequestedSlots}) exceed total available slots (${totalAvailableSlots}) in the week. Adjust the config to add more lectures per day.`);
+            alert(`Total requested lectures (${totalRequestedSlots}) exceed total available slots this week (${totalAvailableSlots}). Add more lectures per day in the grid config, or reduce subject frequencies.`);
             return;
         }
 
+        // ── 3. Build teacher-busy map from ALL other classes' saved timetables ─
+        // Key: "dayOfWeek:startTime" — value: already committed across the school
+        const teacherBusy = new Map<string, Set<string>>();
+        timetables
+            .filter(t => t.classId !== selectedClassId)
+            .forEach(t => {
+                if (!teacherBusy.has(t.teacherId)) teacherBusy.set(t.teacherId, new Set());
+                teacherBusy.get(t.teacherId)!.add(`${t.dayOfWeek}:${t.startTime}`);
+            });
+
+        // ── 4. Pre-check: teacher weekly capacity across all classes ──────────
+        const totalWeekSlots = availableDaysCount * lectureSlots.length;
+        // Aggregate how many periods each teacher is needed for THIS class
+        const neededByTeacher = new Map<string, number>();
+        for (const alloc of allocations) {
+            neededByTeacher.set(alloc.teacherId, (neededByTeacher.get(alloc.teacherId) || 0) + alloc.frequency);
+        }
+
+        const capacityErrors: string[] = [];
+        for (const [tid, needed] of neededByTeacher) {
+            const alreadyCommitted = (teacherBusy.get(tid) || new Set()).size;
+            const freeSlots = totalWeekSlots - alreadyCommitted;
+            if (needed > freeSlots) {
+                const t = teachers.find(t => t.id === tid);
+                const name = t ? `${t.firstName} ${t.lastName}` : 'Unknown teacher';
+                capacityErrors.push(`  • ${name} — needs ${needed} period(s) for this class but only has ${freeSlots} free period(s) left (${alreadyCommitted} already committed to other classes)`);
+            }
+        }
+        if (capacityErrors.length > 0) {
+            alert(`Not enough teacher availability to build this timetable:\n\n${capacityErrors.join('\n')}\n\nEither assign different teachers to some subjects, reduce their frequency, or add more teachers to the school.`);
+            return;
+        }
+
+        // ── 5. Auto-fill with live conflict checking ───────────────────────────
         const newMatrix: Record<number, Record<number, { subject: string, teacherId: string }>> = {};
         ACTIVE_DAYS_DEFAULT.forEach(d => newMatrix[d] = {});
 
@@ -71,35 +106,61 @@ export default function TimetableBuilder({ classes, teachers, timetables }: { cl
             availableSlotsPerDay[d] = [...lectureSlots.map(s => s.id)];
         });
 
+        // Sort hardest-to-place first (highest frequency = least flexibility)
         const sortedAllocations = [...allocations].sort((a, b) => b.frequency - a.frequency);
 
         for (const alloc of sortedAllocations) {
+            const busy = teacherBusy.get(alloc.teacherId) || new Set();
+
+            // A day is valid when:
+            //   a) the subject isn't already placed on that day
+            //   b) there is at least one slot where this teacher is NOT busy
             const validDays = ACTIVE_DAYS_DEFAULT.filter(d => {
-                if (availableSlotsPerDay[d].length === 0) return false;
-                const slotsInDay = Object.values(newMatrix[d]);
-                return !slotsInDay.some(s => s.subject === alloc.subject);
+                const placed = Object.values(newMatrix[d]);
+                if (placed.some(s => s.subject === alloc.subject)) return false;
+                return availableSlotsPerDay[d].some(slotId => {
+                    const slot = lectureSlots.find(s => s.id === slotId);
+                    return slot && !busy.has(`${d}:${slot.startTime}`);
+                });
             });
 
             if (validDays.length < alloc.frequency) {
-                alert(`Error: Cannot logically fit ${alloc.subject}. Try adjusting break combinations, reducing frequencies, or increasing lectures per day to resolve tight constraints.`);
+                const t = teachers.find(t => t.id === alloc.teacherId);
+                const name = t ? `${t.firstName} ${t.lastName}` : 'this teacher';
+                alert(`Cannot place "${alloc.subject}" ${alloc.frequency}×/week — ${name} has scheduling conflicts with other classes on too many days.\n\nAssign a different teacher or reduce the frequency.`);
                 return;
             }
 
+            // Prioritise days with most free slots so future allocations have room
             validDays.sort((a, b) => availableSlotsPerDay[b].length - availableSlotsPerDay[a].length);
             const daysToUse = validDays.slice(0, alloc.frequency);
 
             for (const day of daysToUse) {
-                const slotsForDay = availableSlotsPerDay[day];
-                const randIdx = Math.floor(Math.random() * slotsForDay.length);
-                const pickedSlotId = slotsForDay[randIdx];
+                // Only pick from slots where this teacher is free
+                const freeSlots = availableSlotsPerDay[day].filter(slotId => {
+                    const slot = lectureSlots.find(s => s.id === slotId);
+                    return slot && !busy.has(`${day}:${slot.startTime}`);
+                });
+
+                const randIdx = Math.floor(Math.random() * freeSlots.length);
+                const pickedSlotId = freeSlots[randIdx];
+                const pickedSlot = lectureSlots.find(s => s.id === pickedSlotId)!;
 
                 newMatrix[day][pickedSlotId] = { subject: alloc.subject, teacherId: alloc.teacherId };
-                slotsForDay.splice(randIdx, 1);
+
+                // Remove from the available pool for this day (slot is now taken)
+                const poolIdx = availableSlotsPerDay[day].indexOf(pickedSlotId);
+                if (poolIdx !== -1) availableSlotsPerDay[day].splice(poolIdx, 1);
+
+                // Mark teacher busy at this time so later allocations of the same
+                // teacher (in this same class or subsequent iterations) don't conflict
+                if (!teacherBusy.has(alloc.teacherId)) teacherBusy.set(alloc.teacherId, new Set());
+                teacherBusy.get(alloc.teacherId)!.add(`${day}:${pickedSlot.startTime}`);
             }
         }
 
         if (Object.keys(matrixPayload).length > 0) {
-            if (!confirm("This will overwrite your existing timetable draft blocks in the grid. Continue?")) return;
+            if (!confirm('This will overwrite your existing timetable draft. Continue?')) return;
         }
         setMatrixPayload(newMatrix);
         setShowAutoFillPanel(false);

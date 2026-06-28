@@ -11,9 +11,15 @@ function LoginForm() {
     const [state, action, pending] = useActionState(login, undefined);
     const searchParams = useSearchParams();
     const schoolSlug = searchParams.get('school'); // Optional pre-fill
+    const resetSuccess = searchParams.get('reset') === 'success';
 
     return (
         <form action={action} className="space-y-6">
+            {resetSuccess && (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-green-200 text-sm text-center">
+                    Password changed successfully. Please sign in with your new password.
+                </div>
+            )}
             {state?.message && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-200 text-sm text-center">
                     {state.message}
@@ -76,6 +82,12 @@ function LoginForm() {
             >
                 {pending ? 'Signing in...' : 'Sign In'}
             </button>
+
+            <div className="text-center">
+                <Link href="/login/reset" className="text-white/60 hover:text-white text-sm transition-colors">
+                    Forgot password?
+                </Link>
+            </div>
         </form>
     );
 }

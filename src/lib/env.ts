@@ -18,6 +18,21 @@ const envSchema = z.object({
     SESSION_SECRET: z
         .string()
         .min(32, 'SESSION_SECRET must be at least 32 characters long'),
+
+    // ── Optional — Phase 3 services ──────────────────────────────────────────
+    // Sentry DSN for error tracking. Set to enable.
+    SENTRY_DSN: z.string().optional(),
+    NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+
+    // Vercel Blob storage token. Required for photo uploads in production.
+    BLOB_READ_WRITE_TOKEN: z.string().optional(),
+
+    // Resend transactional email. Required for welcome emails + password reset.
+    RESEND_API_KEY: z.string().optional(),
+    RESEND_FROM_EMAIL: z.string().optional(),
+
+    // Public URL of the app (used in email links).
+    NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

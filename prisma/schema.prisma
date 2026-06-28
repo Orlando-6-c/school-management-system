@@ -126,6 +126,7 @@ model User {
   id            String    @id @default(cuid())
   username      String
   password      String
+  email         String?
   role          UserRole  @default(SchoolAdmin) // Legacy enum; kept as fallback during migration to self-serve roles
   isActive      Boolean   @default(true)
   loginAttempts Int       @default(0)
@@ -152,9 +153,23 @@ model User {
   guardianId String?   @unique
   guardian   Guardian? @relation(fields: [guardianId], references: [id])
 
+  passwordResetTokens PasswordResetToken[]
+
   @@unique([username, schoolId])
   @@index([schoolId])
   @@index([roleId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// Role - School-scoped, self-serve permission bundle (Phase 1)

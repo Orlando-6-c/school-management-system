@@ -9,6 +9,7 @@ import {
     UnauthorizedError,
 } from '@/lib/authz';
 import { normalizePermissionMap } from '@/lib/permissions';
+import { sendWelcomeEmail } from '@/lib/email';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
@@ -32,33 +33,48 @@ const createUserSchema = z.object({
     username: z.string().min(3, 'Username must be at least 3 characters'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     roleId: z.string().min(1, 'Please select a role'),
+    email: z.string().email().optional().or(z.literal('')),
 });
 
 export async function createSchoolUser(formData: FormData): Promise<ActionResult> {
     try {
-        const user = await requirePermission('users', 'create');
-        if (!user.schoolId) return { success: false, message: 'No school context.' };
+        const actor = await requirePermission('users', 'create');
+        if (!actor.schoolId) return { success: false, message: 'No school context.' };
 
         const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
         if (!parsed.success) {
             return { success: false, message: parsed.error.issues[0]?.message ?? 'Invalid input.' };
         }
-        const { username, password, roleId } = parsed.data;
+        const { username, password, roleId, email } = parsed.data;
 
         // Role must belong to this school.
-        const role = await db.role.findFirst({ where: { id: roleId, schoolId: user.schoolId } });
+        const role = await db.role.findFirst({ where: { id: roleId, schoolId: actor.schoolId } });
         if (!role) return { success: false, message: 'Invalid role.' };
+
+        const school = await db.school.findUnique({ where: { id: actor.schoolId }, select: { name: true, slug: true } });
 
         await db.user.create({
             data: {
                 username,
                 password: await hashPassword(password),
+                email: email || null,
                 role: 'ReadOnly', // legacy enum default; real access comes from roleId
                 roleId,
-                schoolId: user.schoolId,
+                schoolId: actor.schoolId,
                 isActive: true,
             },
         });
+
+        // Fire-and-forget welcome email
+        if (email && school) {
+            sendWelcomeEmail({
+                to: email,
+                username,
+                tempPassword: password,
+                schoolName: school.name,
+                schoolSlug: school.slug,
+            }).catch(() => {});
+        }
 
         revalidatePath('/school/users');
         return { success: true, message: 'User created.' };

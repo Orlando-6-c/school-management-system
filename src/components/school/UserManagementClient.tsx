@@ -104,6 +104,10 @@ export function UserManagementClient({ users, roles, canCreate, canEdit }: Props
                                     ))}
                                 </select>
                             </div>
+                            <div className="grid gap-1.5 sm:col-span-2">
+                                <Label htmlFor="email">Email <span className="text-muted-foreground font-normal">(optional — for welcome email + password reset)</span></Label>
+                                <Input id="email" name="email" type="email" placeholder="user@example.com" />
+                            </div>
                             <div className="sm:col-span-3 flex gap-2">
                                 <Button type="submit" disabled={pending}>
                                     {pending ? (

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
+import { PhotoUpload } from '@/components/ui/photo-upload';
 
 interface Extra { name: string; amount: string }
 
@@ -199,8 +200,8 @@ export function StaffForm({ staffId, defaultValues }: StaffFormProps) {
             </div>
 
             <div className="space-y-1.5">
-                <Label htmlFor="photograph">Photo URL (optional)</Label>
-                <Input id="photograph" name="photograph" placeholder="https://..." value={form.photograph} onChange={field('photograph')} />
+                <Label>Photograph (optional)</Label>
+                <PhotoUpload name="photograph" defaultValue={defaultValues?.photograph ?? ''} />
             </div>
 
             {!isEdit && (

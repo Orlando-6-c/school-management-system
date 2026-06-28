@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Search } from 'lucide-react';
+import { PhotoUpload } from '@/components/ui/photo-upload';
 
 interface ClassItem {
     id: string;
@@ -43,7 +44,7 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
             dateOfAdmission: new Date().toISOString().split('T')[0], // Default to today
             monthlyFees: 0,
             discountPercentage: 0,
-            photograph: ''
+            photograph: '' // kept for form registration; PhotoUpload manages actual value
         }
     });
 
@@ -76,22 +77,6 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
         setFinalFee(Math.round(calculated));
     }, [monthlyFeeInput, discountInput]);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                alert('File size too large (Max 2MB)');
-                e.target.value = '';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setValue('photograph', reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleCnicSearch = async () => {
         if (cnicSearch.length < 5) {
             alert('Please enter a valid CNIC');
@@ -123,8 +108,6 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
 
     return (
         <form action={action} className="space-y-8">
-            {/* Hidden Photo Field */}
-            <input type="hidden" {...register("photograph")} />
 
             {state.message && (
                 <div className={`p-4 rounded-md ${state.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
@@ -177,9 +160,8 @@ export function AdmissionForm({ classes = [] }: AdmissionFormProps) { // Default
                     <CardHeader><CardTitle className="text-foreground">Student Information</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="photograph" className={labelClasses}>Photo</Label>
-                            <Input id="photograph" type="file" accept="image/*" className={inputClasses} onChange={handleImageChange} />
-                            <p className="text-xs text-muted-foreground">Max 2MB. Preview not shown.</p>
+                            <Label className={labelClasses}>Photo</Label>
+                            <PhotoUpload name="photograph" />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="name" className={labelClasses}>Full Name</Label>

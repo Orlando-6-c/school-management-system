@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -93,11 +92,10 @@ export function TeacherTable({ teachers, session }: TeacherTableProps) {
                                 <TableCell>
                                     <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted">
                                         {teacher.photograph ? (
-                                            <Image
+                                            <img
                                                 src={teacher.photograph}
                                                 alt={`${teacher.firstName} ${teacher.lastName}`}
-                                                fill
-                                                className="object-cover"
+                                                className="h-full w-full object-cover"
                                             />
                                         ) : (
                                             <div className="flex items-center justify-center h-full w-full text-xs text-muted-foreground">

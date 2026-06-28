@@ -1,124 +1,209 @@
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { getIncomeRecords, getExpenseRecords } from '@/actions/finance';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus, ArrowUpRight, ArrowDownRight, Banknote } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
+function fmt(n: number) {
+    return 'Rs ' + n.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 export default async function FinancePage() {
-    const rawIncome = await getIncomeRecords();
-    const rawExpense = await getExpenseRecords();
+    const [incomeRecords, expenseRecords] = await Promise.all([
+        getIncomeRecords(),
+        getExpenseRecords(),
+    ]);
 
-    // Ensure they are arrays
-    const incomeRecords = Array.isArray(rawIncome) ? rawIncome : [];
-    const expenseRecords = Array.isArray(rawExpense) ? rawExpense : [];
+    const income = Array.isArray(incomeRecords) ? incomeRecords : [];
+    const expense = Array.isArray(expenseRecords) ? expenseRecords : [];
 
-    // Calculate totals
-    const totalIncome = incomeRecords.reduce((sum: number, record: any) => sum + (Number(record?.amount) || 0), 0);
-    const totalExpense = expenseRecords.reduce((sum: number, record: any) => sum + (Number(record?.amount) || 0), 0);
-    const netProfit = totalIncome - totalExpense;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
-    // Get recent transactions (combine and sort)
-    const recentTransactions = [
-        ...incomeRecords.map((r: any) => ({ ...r, type: 'Income' })),
-        ...expenseRecords.map((r: any) => ({ ...r, type: 'Expense' }))
-    ].sort((a: any, b: any) => {
-        const dateA = a.date ? new Date(a.date).getTime() : 0;
-        const dateB = b.date ? new Date(b.date).getTime() : 0;
-        return dateB - dateA;
-    }).slice(0, 5);
+    const thisMonthIncome = income.filter((r: any) => {
+        const d = new Date(r.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    const thisMonthExpense = expense.filter((r: any) => {
+        const d = new Date(r.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const totalIncome = income.reduce((s: number, r: any) => s + Number(r.amount), 0);
+    const totalExpense = expense.reduce((s: number, r: any) => s + Number(r.amount), 0);
+    const monthIncome = thisMonthIncome.reduce((s: number, r: any) => s + Number(r.amount), 0);
+    const monthExpense = thisMonthExpense.reduce((s: number, r: any) => s + Number(r.amount), 0);
+
+    // Category breakdown for this month
+    const incomeByCat: Record<string, number> = {};
+    for (const r of thisMonthIncome as any[]) {
+        incomeByCat[r.category] = (incomeByCat[r.category] || 0) + Number(r.amount);
+    }
+    const expenseByCat: Record<string, number> = {};
+    for (const r of thisMonthExpense as any[]) {
+        expenseByCat[r.category] = (expenseByCat[r.category] || 0) + Number(r.amount);
+    }
+
+    // Recent 8 transactions across both
+    const recent = [
+        ...(income as any[]).map((r: any) => ({ ...r, _type: 'Income' })),
+        ...(expense as any[]).map((r: any) => ({ ...r, _type: 'Expense' })),
+    ]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 8);
+
+    const monthName = now.toLocaleString('default', { month: 'long' });
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Finance Dashboard</h1>
-                <div className="flex space-x-2">
+        <div className="space-y-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-semibold text-foreground">Finance Overview</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">{monthName} {currentYear}</p>
+                </div>
+                <div className="flex gap-2">
                     <Link href="/school/finance/income/new">
-                        <Button className="bg-green-600 hover:bg-green-700">
-                            <Plus className="mr-2 h-4 w-4" /> Add Income
-                        </Button>
+                        <Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1.5" />Income</Button>
                     </Link>
                     <Link href="/school/finance/expense/new">
-                        <Button className="bg-red-600 hover:bg-red-700">
-                            <Plus className="mr-2 h-4 w-4" /> Add Expense
-                        </Button>
+                        <Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1.5" />Expense</Button>
+                    </Link>
+                    <Link href="/school/finance/challan/generate">
+                        <Button size="sm"><Plus className="h-4 w-4 mr-1.5" />Generate Challans</Button>
                     </Link>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="border-l-4 border-l-green-500 shadow-sm">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
-                        <ArrowUpRight className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">Rs {totalIncome.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground mt-1">All time income</p>
-                    </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-red-500 shadow-sm">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Expense</CardTitle>
-                        <ArrowDownRight className="h-4 w-4 text-red-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">Rs {totalExpense.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground mt-1">All time expenses</p>
-                    </CardContent>
-                </Card>
-                <Card className={`border-l-4 shadow-sm ${netProfit >= 0 ? 'border-l-blue-500' : 'border-l-orange-500'}`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Net Balance</CardTitle>
-                        <Banknote className={`h-4 w-4 ${netProfit >= 0 ? 'text-blue-500' : 'text-orange-500'}`} />
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                            Rs {netProfit.toLocaleString()}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Available funds</p>
-                    </CardContent>
-                </Card>
+            {/* Summary cards — 4 simple stat blocks */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: `${monthName} Income`,  value: monthIncome,  note: `${thisMonthIncome.length} records` },
+                    { label: `${monthName} Expenses`, value: monthExpense, note: `${thisMonthExpense.length} records` },
+                    { label: 'All-time Income',  value: totalIncome,  note: `${income.length} records total` },
+                    { label: 'All-time Expenses', value: totalExpense, note: `${expense.length} records total` },
+                ].map((s) => (
+                    <div key={s.label} className="bg-card border border-border rounded-lg p-4">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{s.label}</p>
+                        <p className="text-xl font-semibold text-foreground mt-1">{fmt(s.value)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{s.note}</p>
+                    </div>
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
-                <Card className="shadow-sm border-border">
-                    <CardHeader>
-                        <CardTitle>Recent Transactions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {recentTransactions.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-4">No recent transactions found.</p>
+            {/* Net balance */}
+            <div className="bg-card border border-border rounded-lg p-4 flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-medium text-muted-foreground">Net Balance (All-time)</p>
+                    <p className={`text-2xl font-semibold mt-0.5 ${totalIncome - totalExpense >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                        {fmt(totalIncome - totalExpense)}
+                    </p>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm font-medium text-muted-foreground">{monthName} Net</p>
+                    <p className={`text-xl font-semibold mt-0.5 ${monthIncome - monthExpense >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                        {fmt(monthIncome - monthExpense)}
+                    </p>
+                </div>
+            </div>
+
+            {/* Category breakdown */}
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border">
+                        <h2 className="text-sm font-semibold text-foreground">{monthName} Income by Category</h2>
+                    </div>
+                    <table className="w-full text-sm">
+                        <tbody>
+                            {Object.keys(incomeByCat).length === 0 ? (
+                                <tr><td className="px-4 py-6 text-center text-muted-foreground text-xs">No income this month</td></tr>
                             ) : (
-                                recentTransactions.map((transaction: any) => (
-                                    <div key={transaction.transactionId || Math.random()} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted transition-colors">
-                                        <div className="flex items-center space-x-4">
-                                            <div className={`p-2 rounded-full ${transaction.type === 'Income' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                                {transaction.type === 'Income' ? (
-                                                    <ArrowUpRight className={`h-4 w-4 ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`} />
-                                                ) : (
-                                                    <ArrowDownRight className={`h-4 w-4 ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`} />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{transaction.description || 'No Description'}</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {transaction.date ? format(new Date(transaction.date), 'MMM dd, yyyy') : 'N/A'} • {transaction.category || 'Uncategorized'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className={`font-semibold ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {transaction.type === 'Income' ? '+' : '-'}Rs {Number(transaction.amount || 0).toLocaleString()}
-                                        </div>
-                                    </div>
+                                Object.entries(incomeByCat).map(([cat, amt]) => (
+                                    <tr key={cat} className="border-b border-border last:border-0">
+                                        <td className="px-4 py-2.5 text-muted-foreground">{cat}</td>
+                                        <td className="px-4 py-2.5 text-right font-medium tabular-nums">{fmt(amt)}</td>
+                                    </tr>
                                 ))
                             )}
-                        </div>
-                    </CardContent>
-                </Card>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border">
+                        <h2 className="text-sm font-semibold text-foreground">{monthName} Expenses by Category</h2>
+                    </div>
+                    <table className="w-full text-sm">
+                        <tbody>
+                            {Object.keys(expenseByCat).length === 0 ? (
+                                <tr><td className="px-4 py-6 text-center text-muted-foreground text-xs">No expenses this month</td></tr>
+                            ) : (
+                                Object.entries(expenseByCat).map(([cat, amt]) => (
+                                    <tr key={cat} className="border-b border-border last:border-0">
+                                        <td className="px-4 py-2.5 text-muted-foreground">{cat}</td>
+                                        <td className="px-4 py-2.5 text-right font-medium tabular-nums">{fmt(amt)}</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Recent transactions */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-foreground">Recent Transactions</h2>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                        <Link href="/school/finance/income" className="hover:text-foreground transition-colors">View income →</Link>
+                        <Link href="/school/finance/expense" className="hover:text-foreground transition-colors">View expenses →</Link>
+                    </div>
+                </div>
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-border bg-muted/40">
+                            <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Date</th>
+                            <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Description</th>
+                            <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Category</th>
+                            <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Type</th>
+                            <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {recent.length === 0 ? (
+                            <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground text-xs">No transactions yet.</td></tr>
+                        ) : (
+                            recent.map((r: any) => (
+                                <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                                    <td className="px-4 py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                                        {format(new Date(r.date), 'dd MMM yyyy')}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-foreground max-w-[200px] truncate">
+                                        {r.description || r.source || '—'}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-muted-foreground">{r.category}</td>
+                                    <td className="px-4 py-2.5">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                            r._type === 'Income'
+                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                                                : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                                        }`}>
+                                            {r._type}
+                                        </span>
+                                    </td>
+                                    <td className={`px-4 py-2.5 text-right font-medium tabular-nums ${
+                                        r._type === 'Income' ? 'text-foreground' : 'text-foreground'
+                                    }`}>
+                                        {r._type === 'Income' ? '+' : '−'}{fmt(Number(r.amount))}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

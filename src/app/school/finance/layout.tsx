@@ -1,27 +1,23 @@
+'use server';
+
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
+import FinanceNav from '@/components/finance/FinanceNav';
 
-export default async function FinanceLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default async function FinanceLayout({ children }: { children: React.ReactNode }) {
     const session = await getSession();
-
-    // Check if user is authorized to access finance module
-    // Allow SchoolAdmin, SuperAdmin, AND Finance role (Clerk)
-    if (!session.userId || !session.schoolId || !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)) {
-        redirect('/login'); // Redirect unauthorized users
+    if (
+        !session.userId ||
+        !session.schoolId ||
+        !(session.role === 'SchoolAdmin' || session.role === 'Finance' || session.isSuperAdmin)
+    ) {
+        redirect('/login');
     }
 
     return (
-        <div className="flex h-screen bg-secondary">
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-secondary p-6">
-                    {children}
-                </main>
-            </div>
+        <div className="space-y-0">
+            <FinanceNav />
+            <div className="p-6 md:p-8">{children}</div>
         </div>
     );
 }

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { addTeacher, updateTeacher, TeacherState } from '@/actions/teacher';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { PhotoUpload } from '@/components/ui/photo-upload';
 
 interface Extra { name: string; amount: string }
 
@@ -28,7 +29,7 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
         lastName: initialData?.lastName ?? '',
         gender: initialData?.gender ?? 'Male',
         cnic: initialData?.cnic ?? '',
-        photograph: initialData?.photograph ?? '',
+        photograph: '',
         qualification: initialData?.qualification ?? '',
         subject: initialData?.subject ?? '',
         experience: initialData?.experience ?? '',
@@ -112,8 +113,8 @@ export default function TeacherForm({ initialData }: { initialData?: any }) {
                             {state?.errors?.cnic && <p className="text-red-500 text-xs">{state.errors.cnic}</p>}
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                            <Label htmlFor="photograph">Photograph URL</Label>
-                            <Input id="photograph" name="photograph" placeholder="https://..." value={form.photograph} onChange={field('photograph')} />
+                            <Label>Photograph</Label>
+                            <PhotoUpload name="photograph" defaultValue={initialData?.photograph ?? ''} />
                         </div>
                     </CardContent>
                 </Card>
