@@ -6,7 +6,7 @@ import db from '@/lib/db';
 import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { TeacherTable } from '@/components/school/TeacherTable';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PaginationControls } from '@/components/ui/pagination-controls';
@@ -58,14 +58,22 @@ export default async function TeachersPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">Teachers Directory</h1>
-                <Button asChild>
-                    <Link href="/school/teachers/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Teacher
-                    </Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button asChild variant="outline">
+                        <Link href="/school/teachers/import">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Import CSV
+                        </Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/school/teachers/new">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Teacher
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <Card className="bg-card border-border shadow-sm">

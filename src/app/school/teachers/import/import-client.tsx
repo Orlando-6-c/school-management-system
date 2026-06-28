@@ -1,31 +1,32 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { importStudents, type ImportRow, type ImportResult } from '@/actions/import';
+import { importTeachers, type TeacherImportRow, type ImportResult } from '@/actions/import';
 import { Upload, Download, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const TEMPLATE_HEADERS = [
-    'name', 'gender', 'dateOfBirth', 'dateOfAdmission', 'bFormNumber',
-    'className', 'monthlyFees', 'guardianName', 'guardianCnic', 'guardianContact', 'guardianRelation',
+    'firstName', 'lastName', 'email', 'phone', 'gender', 'cnic',
+    'qualification', 'subject', 'experience', 'joiningDate', 'salary', 'address',
 ];
 const TEMPLATE_EXAMPLE = [
-    'Ali Raza', 'Male', '2015-03-10', '2026-04-01', '12345-6789012-3',
-    'Grade 1', '2500', 'Ahmad Raza', '35202-1234567-8', '03001234567', 'Father',
+    'Ahmad', 'Raza', 'ahmad.raza@school.com', '03001234567', 'Male', '35202-1234567-8',
+    'B.Ed', 'Mathematics', '5 years', '2026-01-15', '25000', 'House 5, Street 3, Lahore',
 ];
 
 const COLUMNS: { name: string; required: boolean; format: string; example: string }[] = [
-    { name: 'name',             required: true, format: 'Full student name',                    example: 'Ali Raza' },
-    { name: 'gender',           required: true, format: '"Male" or "Female"',                   example: 'Male' },
-    { name: 'dateOfBirth',      required: true, format: 'YYYY-MM-DD',                          example: '2015-03-10' },
-    { name: 'dateOfAdmission',  required: true, format: 'YYYY-MM-DD',                          example: '2026-04-01' },
-    { name: 'bFormNumber',      required: true, format: 'B-Form or child CNIC',                example: '12345-6789012-3' },
-    { name: 'className',        required: true, format: 'Must match an existing class exactly', example: 'Grade 1' },
-    { name: 'monthlyFees',      required: true, format: 'Monthly fee in PKR (number)',          example: '2500' },
-    { name: 'guardianName',     required: true, format: "Guardian's full name",                 example: 'Ahmad Raza' },
-    { name: 'guardianCnic',     required: true, format: 'Guardian CNIC — used as portal login', example: '35202-1234567-8' },
-    { name: 'guardianContact',  required: true, format: 'Min 10 digits — used as portal password', example: '03001234567' },
-    { name: 'guardianRelation', required: true, format: 'Relationship to student',             example: 'Father' },
+    { name: 'firstName',     required: true,  format: 'First name',              example: 'Ahmad' },
+    { name: 'lastName',      required: true,  format: 'Last name',               example: 'Raza' },
+    { name: 'email',         required: true,  format: 'Valid email address',      example: 'ahmad.raza@school.com' },
+    { name: 'phone',         required: true,  format: 'Min 10 digits',            example: '03001234567' },
+    { name: 'gender',        required: true,  format: '"Male" or "Female"',       example: 'Male' },
+    { name: 'cnic',          required: true,  format: 'Must be unique per school',example: '35202-1234567-8' },
+    { name: 'qualification', required: true,  format: 'Education level',          example: 'B.Ed' },
+    { name: 'subject',       required: true,  format: 'Subject taught',           example: 'Mathematics' },
+    { name: 'experience',    required: false, format: 'Years of experience',      example: '5 years' },
+    { name: 'joiningDate',   required: true,  format: 'YYYY-MM-DD',              example: '2026-01-15' },
+    { name: 'salary',        required: true,  format: 'Monthly PKR (number)',     example: '25000' },
+    { name: 'address',       required: false, format: 'Full address',             example: 'House 5, Street 3, Lahore' },
 ];
 
 function downloadTemplate() {
@@ -33,7 +34,7 @@ function downloadTemplate() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'student-import-template.csv';
+    a.download = 'teacher-import-template.csv';
     a.click();
     URL.revokeObjectURL(a.href);
 }
@@ -55,16 +56,12 @@ function parseCSV(text: string): string[][] {
     });
 }
 
-interface ImportClientProps {
-    classes: { name: string; section: string | null }[];
-}
-
 type Phase = 'upload' | 'preview' | 'result';
 
-export function ImportClient({ classes }: ImportClientProps) {
+export function TeacherImportClient() {
     const fileRef = useRef<HTMLInputElement>(null);
     const [phase, setPhase] = useState<Phase>('upload');
-    const [rows, setRows] = useState<ImportRow[]>([]);
+    const [rows, setRows] = useState<TeacherImportRow[]>([]);
     const [result, setResult] = useState<ImportResult | null>(null);
     const [importing, setImporting] = useState(false);
     const [parseError, setParseError] = useState('');
@@ -80,13 +77,16 @@ export function ImportClient({ classes }: ImportClientProps) {
                 if (parsed.length < 2) { setParseError('CSV must have at least one data row.'); return; }
                 const headers = parsed[0].map((h) => h.toLowerCase().trim());
                 const expectedHeaders = TEMPLATE_HEADERS.map((h) => h.toLowerCase());
-                const missing = expectedHeaders.filter((h) => !headers.includes(h));
-                if (missing.length) { setParseError(`Missing columns: ${missing.join(', ')}`); return; }
+                const missing = expectedHeaders.filter((h) => !headers.includes(h) && COLUMNS.find((c) => c.name.toLowerCase() === h)?.required);
+                if (missing.length) { setParseError(`Missing required columns: ${missing.join(', ')}`); return; }
 
                 const data = parsed.slice(1).filter((r) => r.some((c) => c)).map((r, i) => {
                     const obj: Record<string, string> = {};
-                    headers.forEach((h, idx) => { obj[expectedHeaders.indexOf(h) >= 0 ? TEMPLATE_HEADERS[expectedHeaders.indexOf(h)] : h] = r[idx] ?? ''; });
-                    return { row: i + 2, ...obj } as ImportRow;
+                    headers.forEach((h, idx) => {
+                        const canonIdx = expectedHeaders.indexOf(h);
+                        obj[canonIdx >= 0 ? TEMPLATE_HEADERS[canonIdx] : h] = r[idx] ?? '';
+                    });
+                    return { row: i + 2, ...obj } as TeacherImportRow;
                 });
                 setRows(data);
                 setParseError('');
@@ -101,7 +101,7 @@ export function ImportClient({ classes }: ImportClientProps) {
 
     const handleImport = async () => {
         setImporting(true);
-        const res = await importStudents(rows);
+        const res = await importTeachers(rows);
         setResult(res);
         setPhase('result');
         setImporting(false);
@@ -111,11 +111,11 @@ export function ImportClient({ classes }: ImportClientProps) {
         <div className="space-y-6 max-w-5xl">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Import Students</h1>
-                    <p className="text-muted-foreground mt-1">Bulk-enrol students from a CSV file.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Import Teachers</h1>
+                    <p className="text-muted-foreground mt-1">Bulk-add teachers from a CSV file.</p>
                 </div>
-                <Link href="/school/students" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                    ← Back to students
+                <Link href="/school/teachers" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    ← Back to teachers
                 </Link>
             </div>
 
@@ -137,11 +137,8 @@ export function ImportClient({ classes }: ImportClientProps) {
                     <div className="space-y-2">
                         <h2 className="font-semibold text-foreground">Step 1: Prepare your CSV</h2>
                         <p className="text-sm text-muted-foreground">
-                            Download the template, fill in your student data, then upload it here.
-                            Available classes in this school:{' '}
-                            <span className="font-medium text-foreground">
-                                {classes.map((c) => `${c.name}${c.section ? ` (${c.section})` : ''}`).join(', ') || 'None — create classes first'}
-                            </span>
+                            Download the template, fill in teacher data, then upload it here.
+                            Each teacher gets a portal login: <span className="font-medium text-foreground">username = CNIC, password = phone number.</span>
                         </p>
                         <button
                             onClick={downloadTemplate}
@@ -220,25 +217,27 @@ export function ImportClient({ classes }: ImportClientProps) {
                                     <tr>
                                         <th className="px-3 py-2 font-semibold text-muted-foreground">#</th>
                                         <th className="px-3 py-2 font-semibold text-muted-foreground">Name</th>
+                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Email</th>
+                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Phone</th>
                                         <th className="px-3 py-2 font-semibold text-muted-foreground">Gender</th>
-                                        <th className="px-3 py-2 font-semibold text-muted-foreground">DOB</th>
-                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Class</th>
-                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Fee</th>
-                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Guardian</th>
                                         <th className="px-3 py-2 font-semibold text-muted-foreground">CNIC</th>
+                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Subject</th>
+                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Joining Date</th>
+                                        <th className="px-3 py-2 font-semibold text-muted-foreground">Salary</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
                                     {rows.slice(0, 50).map((r) => (
                                         <tr key={r.row} className="hover:bg-muted/30">
                                             <td className="px-3 py-2 text-muted-foreground">{r.row}</td>
-                                            <td className="px-3 py-2 font-medium text-foreground">{r.name}</td>
+                                            <td className="px-3 py-2 font-medium text-foreground">{r.firstName} {r.lastName}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">{r.email}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">{r.phone}</td>
                                             <td className="px-3 py-2 text-muted-foreground">{r.gender}</td>
-                                            <td className="px-3 py-2 text-muted-foreground">{r.dateOfBirth}</td>
-                                            <td className="px-3 py-2 text-muted-foreground">{r.className}</td>
-                                            <td className="px-3 py-2 text-muted-foreground">Rs {r.monthlyFees}</td>
-                                            <td className="px-3 py-2 text-muted-foreground">{r.guardianName}</td>
-                                            <td className="px-3 py-2 text-muted-foreground font-mono">{r.guardianCnic}</td>
+                                            <td className="px-3 py-2 text-muted-foreground font-mono">{r.cnic}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">{r.subject}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">{r.joiningDate}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">Rs {r.salary}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -260,7 +259,7 @@ export function ImportClient({ classes }: ImportClientProps) {
                             disabled={importing}
                             className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
                         >
-                            {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importing…</> : `Import ${rows.length} students`}
+                            {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importing…</> : `Import ${rows.length} teachers`}
                         </button>
                     </div>
                 </div>
@@ -274,7 +273,7 @@ export function ImportClient({ classes }: ImportClientProps) {
                             <CheckCircle2 className="h-8 w-8 text-emerald-600 shrink-0" />
                             <div>
                                 <p className="text-2xl font-bold text-emerald-700">{result.succeeded}</p>
-                                <p className="text-sm text-emerald-600">Students imported</p>
+                                <p className="text-sm text-emerald-600">Teachers imported</p>
                             </div>
                         </div>
                         <div className={`${result.failed.length > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'} border rounded-xl p-5 flex items-center gap-3`}>
@@ -313,8 +312,8 @@ export function ImportClient({ classes }: ImportClientProps) {
                     )}
 
                     <div className="flex gap-3">
-                        <Link href="/school/students" className="px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
-                            View students
+                        <Link href="/school/teachers" className="px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                            View teachers
                         </Link>
                         <button onClick={() => { setPhase('upload'); setResult(null); setRows([]); }} className="px-4 py-2 text-sm border border-border rounded-lg text-muted-foreground hover:text-foreground">
                             Import more

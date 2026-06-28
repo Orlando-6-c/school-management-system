@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Upload } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { DeleteStaffButton } from '@/components/school/DeleteStaffButton';
@@ -64,11 +64,18 @@ export default async function StaffPage({
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Staff</h1>
                     <p className="text-muted-foreground mt-1">Non-teaching staff members.</p>
                 </div>
-                {canCreate && (
-                    <Button asChild>
-                        <Link href="/school/staff/new"><Plus className="h-4 w-4 mr-2" />Add Staff</Link>
-                    </Button>
-                )}
+                <div className="flex gap-2">
+                    {canCreate && (
+                        <Button asChild variant="outline">
+                            <Link href="/school/staff/import"><Upload className="h-4 w-4 mr-2" />Import CSV</Link>
+                        </Button>
+                    )}
+                    {canCreate && (
+                        <Button asChild>
+                            <Link href="/school/staff/new"><Plus className="h-4 w-4 mr-2" />Add Staff</Link>
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <Card className="border-border shadow-sm">

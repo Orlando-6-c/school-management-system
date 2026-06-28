@@ -8,7 +8,16 @@ import { checkStudentLimit } from '@/actions/subscription';
 import { generateRollNumber } from '@/lib/utils/roll-number';
 import { z } from 'zod';
 
-export type ImportRow = {
+// ── Shared ─────────────────────────────────────────────────────────────────────
+
+export type ImportResult = {
+    succeeded: number;
+    failed: { row: number; name: string; reason: string }[];
+};
+
+// ── Student import ─────────────────────────────────────────────────────────────
+
+export type StudentImportRow = {
     row: number;
     name: string;
     gender: string;
@@ -23,10 +32,8 @@ export type ImportRow = {
     guardianRelation: string;
 };
 
-export type ImportResult = {
-    succeeded: number;
-    failed: { row: number; name: string; reason: string }[];
-};
+/** @deprecated Use StudentImportRow */
+export type ImportRow = StudentImportRow;
 
 const rowSchema = z.object({
     name: z.string().min(1),
@@ -42,7 +49,7 @@ const rowSchema = z.object({
     guardianRelation: z.string().min(1),
 });
 
-export async function importStudents(rows: ImportRow[]): Promise<ImportResult> {
+export async function importStudents(rows: StudentImportRow[]): Promise<ImportResult> {
     const session = await getSession();
     if (!session.schoolId || !(await hasPermission('students', 'create'))) {
         return { succeeded: 0, failed: rows.map((r) => ({ row: r.row, name: r.name, reason: 'Access denied' })) };
@@ -162,6 +169,178 @@ export async function importStudents(rows: ImportRow[]): Promise<ImportResult> {
             result.succeeded++;
         } catch (err: any) {
             result.failed.push({ row: row.row, name: row.name, reason: err?.message ?? 'Unknown error' });
+        }
+    }
+
+    return result;
+}
+
+// ── Teacher import ─────────────────────────────────────────────────────────────
+
+export type TeacherImportRow = {
+    row: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    gender: string;
+    cnic: string;
+    qualification: string;
+    subject: string;
+    experience: string;
+    joiningDate: string;
+    salary: string;
+    address: string;
+};
+
+const teacherRowSchema = z.object({
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().min(10, 'Phone must be at least 10 digits'),
+    gender: z.enum(['Male', 'Female']),
+    cnic: z.string().min(13, 'CNIC must be at least 13 characters'),
+    qualification: z.string().min(1, 'Qualification is required'),
+    subject: z.string().min(1, 'Subject is required'),
+    experience: z.string().optional(),
+    joiningDate: z.string().min(1, 'Joining date is required'),
+    salary: z.coerce.number().min(0),
+    address: z.string().optional(),
+});
+
+export async function importTeachers(rows: TeacherImportRow[]): Promise<ImportResult> {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('teachers', 'create'))) {
+        return { succeeded: 0, failed: rows.map((r) => ({ row: r.row, name: `${r.firstName} ${r.lastName}`, reason: 'Access denied' })) };
+    }
+
+    const result: ImportResult = { succeeded: 0, failed: [] };
+
+    for (const row of rows) {
+        const displayName = `${row.firstName} ${row.lastName}`.trim() || `Row ${row.row}`;
+        try {
+            const parsed = teacherRowSchema.safeParse(row);
+            if (!parsed.success) {
+                result.failed.push({ row: row.row, name: displayName, reason: parsed.error.issues[0]?.message ?? 'Validation failed' });
+                continue;
+            }
+
+            const d = parsed.data;
+
+            await db.$transaction(async (tx) => {
+                const teacher = await tx.teacher.create({
+                    data: {
+                        schoolId: session.schoolId!,
+                        firstName: d.firstName,
+                        lastName: d.lastName,
+                        email: d.email,
+                        phone: d.phone,
+                        gender: d.gender,
+                        cnic: d.cnic,
+                        qualification: d.qualification,
+                        subject: d.subject,
+                        experience: d.experience || null,
+                        joiningDate: new Date(d.joiningDate),
+                        salary: d.salary,
+                        address: d.address || null,
+                        salaryExtras: [],
+                    },
+                });
+
+                // Teacher portal user — username = CNIC, password = phone
+                const hashedPass = await hashPassword(d.phone);
+                const teacherUser = await tx.user.create({
+                    data: {
+                        username: d.cnic,
+                        password: hashedPass,
+                        role: 'Teacher',
+                        schoolId: session.schoolId!,
+                        teacherId: teacher.id,
+                        isActive: true,
+                    },
+                });
+                await tx.teacher.update({ where: { id: teacher.id }, data: { user: { connect: { id: teacherUser.id } } } });
+            });
+
+            result.succeeded++;
+        } catch (err: any) {
+            const reason = err?.code === 'P2002'
+                ? 'Duplicate CNIC or email — teacher already exists'
+                : (err?.message ?? 'Unknown error');
+            result.failed.push({ row: row.row, name: displayName, reason });
+        }
+    }
+
+    return result;
+}
+
+// ── Staff import ───────────────────────────────────────────────────────────────
+
+export type StaffImportRow = {
+    row: number;
+    name: string;
+    fatherName: string;
+    cnic: string;
+    dateOfBirth: string;
+    contact: string;
+    gender: string;
+    role: string;
+    workingHours: string;
+    salary: string;
+};
+
+const staffRowSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    fatherName: z.string().min(1, "Father's name is required"),
+    cnic: z.string().min(13, 'CNIC must be at least 13 characters'),
+    dateOfBirth: z.string().min(1, 'Date of birth is required'),
+    contact: z.string().min(10, 'Contact must be at least 10 digits'),
+    gender: z.enum(['Male', 'Female']),
+    role: z.string().min(1, 'Role is required'),
+    workingHours: z.string().min(1, 'Working hours are required'),
+    salary: z.coerce.number().min(0),
+});
+
+export async function importStaff(rows: StaffImportRow[]): Promise<ImportResult> {
+    const session = await getSession();
+    if (!session.schoolId || !(await hasPermission('staff', 'create'))) {
+        return { succeeded: 0, failed: rows.map((r) => ({ row: r.row, name: r.name, reason: 'Access denied' })) };
+    }
+
+    const result: ImportResult = { succeeded: 0, failed: [] };
+
+    for (const row of rows) {
+        try {
+            const parsed = staffRowSchema.safeParse(row);
+            if (!parsed.success) {
+                result.failed.push({ row: row.row, name: row.name, reason: parsed.error.issues[0]?.message ?? 'Validation failed' });
+                continue;
+            }
+
+            const d = parsed.data;
+
+            await db.staff.create({
+                data: {
+                    schoolId: session.schoolId!,
+                    name: d.name,
+                    fatherName: d.fatherName,
+                    cnic: d.cnic,
+                    dateOfBirth: new Date(d.dateOfBirth),
+                    contact: d.contact,
+                    gender: d.gender as 'Male' | 'Female',
+                    role: d.role,
+                    workingHours: d.workingHours,
+                    salary: d.salary,
+                    salaryExtras: [],
+                },
+            });
+
+            result.succeeded++;
+        } catch (err: any) {
+            const reason = err?.code === 'P2002'
+                ? 'Duplicate CNIC — staff member already exists'
+                : (err?.message ?? 'Unknown error');
+            result.failed.push({ row: row.row, name: row.name, reason });
         }
     }
 
