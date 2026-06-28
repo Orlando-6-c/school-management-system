@@ -148,14 +148,17 @@ Follow `ROADMAP.md` for detail. Summary of what's left:
 - ✅ Password change flow for all users (`/school/settings/account` with `ChangePasswordForm`).
 - ✅ Portal accounts **decision**: Teacher/Student/Parent portals stay on legacy role enum (`session.role === 'Teacher'` etc.). Do NOT migrate them to the permissions system — the portals are user-specific and don't need action-level gating.
 
-### Phase 3 — productization
-- File/photo uploads (Vercel Blob or S3) replacing string `photograph` fields.
-- Transactional email (Resend) for invites, password reset, challan notices.
-- Error monitoring (Sentry).
+### Phase 3 — productization ✅ COMPLETE
+- ✅ File/photo uploads: `PhotoUpload` component (drag-and-drop, preview, `/api/upload` → Vercel Blob, base64 fallback in dev); Teacher, Staff, Student forms updated.
+- ✅ Transactional email (Resend): `src/lib/email.ts` — `sendWelcomeEmail` on user creation, `sendPasswordResetEmail` on reset request; no-ops when `RESEND_API_KEY` not set.
+- ✅ Error monitoring (Sentry): `sentry.*.config.ts` + `instrumentation.ts` + `withSentryConfig`; no-op without `SENTRY_DSN`.
 - ✅ Audit-log viewer UI: `/school/settings/audit-log` with pagination + model filter.
 - ✅ Dashboard recent activity pulling from `db.auditLog`.
-- Self-serve school onboarding/signup (trial) for new clients.
-- Polished landing + pricing pages.
+- ✅ Password reset flow: `requestPasswordReset` + `confirmPasswordReset` actions; `/login/reset` + `/login/reset/[token]` pages; anti-enumeration; 1-hour token TTL.
+- ✅ Optional email on User model + `PasswordResetToken` model (migration: `add_user_email_password_reset`).
+- ✅ All Phase 3 env vars optional, documented in `.env.example`.
+- Self-serve school onboarding/signup (trial) for new clients. ← Phase 4 boundary
+- Polished landing + pricing pages. ← Phase 4 boundary
 
 ### Phase 4 — monetization
 - Subscription plans + payment gateway (Stripe, or a local PK gateway given the target market).
